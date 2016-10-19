@@ -1,0 +1,28 @@
+IDIR =.
+CC=g++
+CFLAGS=
+TARGET=test
+
+ODIR=obj
+LDIR =../lib
+
+SUBLIBS=-lGL  -lGLU
+LIBS=-lpthread   -lglut -lGL  -lGLU  -lGLEW -lSOIL
+
+_DEPS = mesh.h model.h
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+
+_OBJ = mesh.o model.o
+OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+
+
+$(ODIR)/%.o:$(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(SUBLIBS)
+
+runme: $(OBJ)
+	$(CC) $(CFLAGS) $(LIBS) -o $@ $^ $(TARGET).cpp
+
+.PHONY: clean
+
+clean:
+	rm -f $(ODIR)/*.o runme
