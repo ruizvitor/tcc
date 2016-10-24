@@ -1,73 +1,30 @@
-// uniform float Time;  // updated each frame by the application
-//
-// uniform mat4 MVP;  // updated each draw call
-// uniform mat4 MV;  // updated each draw call
-// uniform mat3 NormalMatrix;  // updated each draw call
-//
-// uniform vec4 LightSource;  // updated each draw call
-//
-// attribute vec4 mypos;
-// attribute vec4 mynormal;
-// attribute vec2 mytexture;
-//
-// varying vec4 lightVector;
-// varying vec4 viewVec;
-// varying vec3 N;
-// varying vec4 P;
-// varying vec2 TexCoord;
-//
-// void main()
-// {
-// 	//TODO: Compute view vector, normal and vertex position
-// 	P = MV * mypos;
-// 	viewVec = normalize(P);
-// 	N = normalize( NormalMatrix * mynormal.xyz );
-//
-//   TexCoord= mytexture;
-// 	// transform vertex with modelview and projection matrix
-//   gl_Position = MVP * mypos;
-// }
-
 #version 330 core
+layout (location = 0) in vec3 i_position;
+layout (location = 1) in vec3 i_normal;
+layout (location = 2) in vec2 i_texCoords;
 
-// Input vertex data, different for all executions of this shader.
-layout(location = 0) in vec3 vertexPosition_modelspace;
-layout(location = 1) in vec2 vertexUV;
-layout(location = 2) in vec3 vertexNormal_modelspace;
+// data for fragment shader
+out vec3 normalInterp;
+out vec3 vertPos;
+out vec3 lightPos;
+out vec2 o_TexCoords;
 
-// Output data ; will be interpolated for each fragment.
-out vec2 UV;
-out vec3 Position_worldspace;
-out vec3 Normal_cameraspace;
-out vec3 EyeDirection_cameraspace;
-out vec3 LightDirection_cameraspace;
+// Transformation Matrices
+uniform mat3 u_NormalMatrix;
+uniform mat4 u_MV;
+uniform mat4 u_MVP;
 
-// Values that stay constant for the whole mesh.
-uniform mat4 MVP;
-uniform mat4 V;
-uniform mat4 M;
-uniform vec3 LightPosition_worldspace;
+// position of light and camera
+uniform vec3 u_lightPosition;
 
 void main()
 {
-	// Output position of the vertex, in clip space : MVP * position
-	gl_Position =  MVP * vec4(vertexPosition_modelspace,1);
+  vec4 vertPos4 = u_MV * vec4(i_position, 1.0);
+  vertPos = vec3(vertPos4) / vertPos4.w;
+  normalInterp = u_NormalMatrix * i_normal;
+  lightPos=u_lightPosition.xyz;
 
-	// // Position of the vertex, in worldspace : M * position
-	// Position_worldspace = (M * vec4(vertexPosition_modelspace,1)).xyz;
-	//
-	// // Vector that goes from the vertex to the camera, in camera space.
-	// // In camera space, the camera is at the origin (0,0,0).
-	// vec3 vertexPosition_cameraspace = ( V * M * vec4(vertexPosition_modelspace,1)).xyz;
-	// EyeDirection_cameraspace = vec3(0,0,0) - vertexPosition_cameraspace;
-	//
-	// // Vector that goes from the vertex to the light, in camera space. M is ommited because it's identity.
-	// vec3 LightPosition_cameraspace = ( V * vec4(LightPosition_worldspace,1) ).xyz;
-	// LightDirection_cameraspace = LightPosition_cameraspace + EyeDirection_cameraspace;
-	//
-	// // Normal of the the vertex, in camera space
-	// Normal_cameraspace = ( V * M * vec4(vertexNormal_modelspace,0)).xyz; // Only correct if ModelMatrix does not scale the model ! Use its inverse transpose if not.
-	//
-	// // UV of the vertex. No special space for this one.
-	// UV = vertexUV;
+  o_TexCoords=i_texCoords;
+
+  gl_Position = u_MVP * vec4(i_position, 1.0f);
 }

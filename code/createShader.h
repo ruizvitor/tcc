@@ -2,11 +2,14 @@
 #define SHADER_H
 
 #include <GL/glew.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
 
 class Shader
 {
@@ -98,7 +101,19 @@ public:
   }
   // Uses the current shader
   void Use() { glUseProgram(this->Program); }
+  void BindMatrices(glm::mat4* M,glm::mat4* V,glm::mat4* P, glm::vec4* lightPos)
+  {
+    glm::mat4 MV= (*V) * (*M);
+    glm::mat4 MVP= (*P) * MV;
+    glm::mat3 NormalMatrix	= glm::transpose(glm::inverse(glm::mat3(MV)));
 
+    //Bind MVP to shader
+    glUniformMatrix3fv(glGetUniformLocation(this->Program, "u_NormalMatrix"), 1, GL_FALSE, glm::value_ptr(NormalMatrix));
+    glUniformMatrix4fv(glGetUniformLocation(this->Program, "u_MVP"), 1, GL_FALSE, glm::value_ptr(MVP));
+    glUniformMatrix4fv(glGetUniformLocation(this->Program, "u_MV"), 1, GL_FALSE, glm::value_ptr(MV));
+    // glUniformMatrix4fv(glGetUniformLocation(this->Program, "u_M"), 1, GL_FALSE, glm::value_ptr(*M));
+    glUniform4fv(glGetUniformLocation(this->Program, "u_lightPosition"), 1, glm::value_ptr(*lightPos));
+  }
 private:
   void checkCompileErrors(GLuint shader, std::string type)
   {
