@@ -22,10 +22,11 @@ public:
     // viewDir	= glm::vec4(-0.240947, -0.428651, 0.870756,1);
     // upDir		= glm::vec4(-0.0848183, 0.903053, 0.421079,1);
     // rightDir	= glm::vec4(-0.96683, 0.0276017, -0.253944,1);
-    position	= glm::vec4(0,0,-100,1);
-    viewDir	= glm::vec4(0.0,0.0,1.0,1.0);
-    upDir		= glm::vec4(0.0,1.0,0.0,1.0);
-    rightDir	= glm::vec4(1.0,0.0,0.0,1.0);
+    position	= glm::vec4(0, 0, 100, 1.0);
+    // position	= glm::vec4(0, 0, 50, 1.0);
+    viewDir	= glm::vec4(0.0,0.0,-1.0,1.0);
+    upDir		= glm::vec4(0.0,-1.0,0.0,1.0);
+    rightDir	= glm::vec4(-1.0,0.0,0.0,1.0);
   }
 
   // move the system forward along the viewing direction

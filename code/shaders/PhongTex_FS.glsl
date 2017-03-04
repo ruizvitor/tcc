@@ -10,9 +10,9 @@ layout(location = 0) out vec3 resultingColor;
 uniform sampler2D texture_diffuse1;
 
 // const vec3 lightPos = vec3(1.0,1.0,1.0);
-const vec3 ambientColor = vec3(0.2, 0.2, 0.2);
-const vec3 diffuseColor = vec3(0.3, 0.3, 0.3);
-const vec3 specColor = vec3(0.5, 0.5, 0.5);
+const vec3 ambientColor = vec3(0.1, 0.2, 0.1);
+const vec3 diffuseColor = vec3(0.2, 0.2, 0.2);
+const vec3 specColor = vec3(0.3, 0.3, 0.3);
 
 void main()
 {
@@ -30,9 +30,10 @@ void main()
   }
 
   vec3 texColor = diffuseColor;
-  texColor = texColor+texture(texture_diffuse1, o_TexCoords).rgb;
+  texColor = texture(texture_diffuse1, o_TexCoords).rgb;
 
   resultingColor = ambientColor +
                    lambertian*texColor +
                    specular*specColor;
+  // resultingColor = texColor;
 }

@@ -37,6 +37,7 @@ public:
   Model(string const & path, bool gamma = false) : gammaCorrection(gamma)
   {
     this->loadModel(path);
+    cout << "Model Load Complete" << endl;
   }
 
   // Draws the model, and thus all its meshes
@@ -119,7 +120,7 @@ private:
         vertex.TexCoords = vec;
       }
       else
-      vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+        vertex.TexCoords = glm::vec2(0.0f, 0.0f);
       // // Tangent
       // vector.x = mesh->mTangents[i].x;
       // vector.y = mesh->mTangents[i].y;
@@ -138,7 +139,7 @@ private:
       aiFace face = mesh->mFaces[i];
       // Retrieve all indices of the face and store them in the indices vector
       for(GLuint j = 0; j < face.mNumIndices; j++)
-      indices.push_back(face.mIndices[j]);
+        indices.push_back(face.mIndices[j]);
     }
     // Process materials
     if(mesh->mMaterialIndex >= 0)
@@ -203,7 +204,19 @@ private:
   }
 };
 
-
+template<typename T1,typename T2,typename T3>
+void flipImg(T1 &old, T2 &res, T3 m, T3 n)
+{
+  for ( int i = 0; i < n; i++)
+  {
+    for ( int j = 0; j < m; j++)
+    {
+      res[3*((i*m)+j)]=old[3*(( (n-i) *m)+j)];
+      res[3*((i*m)+j)+1]=old[3*(( (n-i) *m)+j)+1];
+      res[3*((i*m)+j)+2]=old[3*(( (n-i) *m)+j)+2];
+    }
+  }
+}
 
 
 GLint TextureFromFile(const char* path, string directory, bool gamma)
@@ -214,10 +227,14 @@ GLint TextureFromFile(const char* path, string directory, bool gamma)
   GLuint textureID;
   glGenTextures(1, &textureID);
   int width,height;
-  unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+  unsigned char* tempImage = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+  std::vector< unsigned char > image( width * height * 3 );
+  flipImg(tempImage,image,width,height);//OPENGL INVERT Y
+  SOIL_free_image_data(tempImage);
+
   // Assign texture to ID
   glBindTexture(GL_TEXTURE_2D, textureID);
-  glTexImage2D(GL_TEXTURE_2D, 0, gamma ? GL_SRGB : GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+  glTexImage2D(GL_TEXTURE_2D, 0, gamma ? GL_SRGB : GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, &image[0]);
   glGenerateMipmap(GL_TEXTURE_2D);
 
   // Parameters
@@ -226,7 +243,6 @@ GLint TextureFromFile(const char* path, string directory, bool gamma)
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glBindTexture(GL_TEXTURE_2D, 0);
-  SOIL_free_image_data(image);
   return textureID;
 }
 #endif // _MODEL_H_
