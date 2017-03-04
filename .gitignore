@@ -1,3 +1,5 @@
 code/out/*
 code/shaders/*.bin
 code/runme
+material/
+profeta/
