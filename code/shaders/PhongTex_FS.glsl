@@ -30,7 +30,7 @@ void main()
   }
 
   vec3 texColor = diffuseColor;
-  texColor = texture(texture_diffuse1, o_TexCoords).rgb;
+  // texColor = texture(texture_diffuse1, o_TexCoords).rgb;
 
   resultingColor = ambientColor +
                    lambertian*texColor +

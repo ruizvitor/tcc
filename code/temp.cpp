@@ -10,6 +10,7 @@
 #include "lossfunc.h"
 #include "pose.h"
 #include "frameBuffer.h"
+#include "Downhill.h"
 //
 #include <cv.h>
 #include <GL/glew.h>
@@ -30,43 +31,10 @@ using namespace std;
 // Properties
 #define WINDOW_HEIGHT 1024
 #define WINDOW_WIDTH 1024
-#define MAX_ITER 1000
-#define MIN_ERROR 0.00001
+#define MAX_ITER 200
+#define MIN_ERROR 0.01
 //
 
-glm::quat RotationBetweenVectors(glm::vec3 start, glm::vec3 dest)
-{
-	start = normalize(start);
-	dest = normalize(dest);
-
-	float cosTheta = dot(start, dest);
-	glm::vec3 rotationAxis;
-
-	if (cosTheta < -1 + 0.001f){
-		// special case when vectors in opposite directions:
-		// there is no "ideal" rotation axis
-		// So guess one; any will do as long as it's perpendicular to start
-		rotationAxis = cross(glm::vec3(0.0f, 0.0f, 1.0f), start);
-		if (glm::length2(rotationAxis) < 0.01 ) // bad luck, they were parallel, try again!
-			rotationAxis = cross(glm::vec3(1.0f, 0.0f, 0.0f), start);
-
-		rotationAxis = normalize(rotationAxis);
-		return glm::angleAxis(180.0f, rotationAxis);
-	}
-
-	rotationAxis = cross(start, dest);
-
-	float s = sqrt( (1+cosTheta)*2 );
-	float invs = 1 / s;
-
-	return glm::quat(
-		s * 0.5f,
-		rotationAxis.x * invs,
-		rotationAxis.y * invs,
-		rotationAxis.z * invs
-	);
-
-}
 
 
 
@@ -132,13 +100,13 @@ int main(void)
   glEnable(GL_DEPTH_TEST);
 
   //Images
-  Mat image1 = imread("../material/cj_l2.JPG", CV_LOAD_IMAGE_GRAYSCALE);
+  Mat imageGray = imread("../material/cj_b2.JPG", CV_LOAD_IMAGE_GRAYSCALE);
   // Myimage imgProj("../material/ff0.JPG");
-  Mat imageColor = imread("../material/cj_l2.JPG", CV_LOAD_IMAGE_COLOR);
+  Mat imageColor = imread("../material/cj_b2.JPG", CV_LOAD_IMAGE_COLOR);
   uint8_t *imgProj = imageColor.data;
-  // Mat image1 = imread("../material/frontClean.JPG", CV_LOAD_IMAGE_GRAYSCALE);
-  double favg=Mean(image1);
-  double cff=MyCff(image1,favg);
+  // Mat imageGray = imread("../material/frontClean.JPG", CV_LOAD_IMAGE_GRAYSCALE);
+  double favg=Mean(imageGray);
+  double cff=MyCff(imageGray,favg);
 
   // int colorR = 169;
   // int colorG = 157;
@@ -150,7 +118,7 @@ int main(void)
   // float vecX[3]={0,0,0};
   // float vecY[3]={0,0,0};//Result of Cross product between x and z, always positive because of photo
   // float vecZ[3]={0,0,0};
-  // FindPlane(image1,colorR,colorG,colorB,thresholdR,thresholdG,thresholdB,gridsize,vecX,vecY,vecZ);
+  // FindPlane(imageGray,colorR,colorG,colorB,thresholdR,thresholdG,thresholdB,gridsize,vecX,vecY,vecZ);
 
   // cam.rightDir	= glm::vec4(vecX[0],vecX[1],vecX[2], 1.0);
   // cam.upDir		= glm::vec4(vecY[0],vecY[1],vecY[2], 1.0);
@@ -159,7 +127,7 @@ int main(void)
   // std::cout << "{ " << cam.position.x << " , " << cam.position.y << " , " << cam.position.z << " }" << std::endl;
 
   // Initialize Shader
-  // Shader simpleShader("shaders/PhongTex_VS.glsl","shaders/PhongTex_FS.glsl");
+  // Shader PhongShader("shaders/PhongTex_VS.glsl","shaders/PhongTex_FS.glsl");
   Shader simpleShader("shaders/simple_VS.glsl","shaders/simple_FS.glsl");
   //Initialize Model
   Model ourModel("../models/frogfacecam.obj");
@@ -227,7 +195,7 @@ int main(void)
   //   // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 21);
   //
   //   frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
-  //   vectors[(i*4)+3]=Loss(image1, frameImage, favg,cff);
+  //   vectors[(i*4)+3]=Loss(imageGray, frameImage, favg,cff);
   //   cout << vectors[(i*4)+3] << endl;
   //
   //   /* unbind frameBuffer */
@@ -242,74 +210,235 @@ int main(void)
   ////TEST CUBE FACES FOR BEST INITIAL pose
   float distance=1.0;
   std::vector< unsigned char > frameImage;
-  float last_distance=1.0;
-  float var_distance=1.0;
+  glm::vec3 myscale(40.0f,40.0f,40.0f);
+  float w[6*7];
+  float fw[7] = {2.0f,3.0f,4.0f, 5.0f,6.0f,7.0f ,8.0f};
+  float rotVec[16] = {
+     1.0f, 0.0f, 0.0f, 0.0f,
+     0.0f, 1.0f, 0.0f, 0.0f,
+     0.0f, 0.0f, 1.0f, 0.0f,
+     0.0f, 0.0f, 0.0f, 1.0f
+  };
+  float tempVec[6];
 
-  for(unsigned int i=0;i<4;i++)
+  glm::mat4 rotMat;
+  memcpy( glm::value_ptr( rotMat ), rotVec, sizeof( rotVec ) );
+
+  for(int j=0;j<4;j++)
   {
-    glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
-    /* Render here */
-    // Clear the colorbuffer
-    glClearColor(0.0,0.0,0.0,0);   // set the clear color to black
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    for(int k=0;k<4;k++)
+    {
+      //Bind FrameBuffer
+      glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
+      /* Render here */
+      // Clear the colorbuffer
+      glClearColor(0.0,0.0,0.0,0);   // set the clear color to black
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-    simpleShader.Use();
+      simpleShader.Use();
 
-    M = glm::mat4(1);//Init
-    // M = glm::translate(M, glm::vec3(0.0f,0.0f,0.0f));//Translate
-    M = glm::scale(M, glm::vec3(15.0f,15.0f,15.0f));//Scale
-    // M = glm::rotate(M, glm::radians(15.0f), glm::vec3(0.0f,0.0f,1.0f));//Rotate
-    M = glm::rotate(M, glm::radians(90.0f*i), glm::vec3(0.0f,1.0f,0.0f));//Rotate
-    // M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0.0f,0.0f,-1.0f));//Rotate
+      //Transformations (Translate*Rotate*Scale)
+      M = glm::mat4(1);//Init
+      memcpy( glm::value_ptr( rotMat ), rotVec, sizeof( rotVec ) );
+      rotMat = glm::rotate(rotMat, glm::radians(90.0f*k), glm::vec3(0.0f,0.0f,1.0f));//Rotate
+      rotMat = glm::rotate(rotMat, glm::radians(90.0f*j), glm::vec3(1.0f,0.0f,0.0f));//Rotate
+      M = M * rotMat;
+      M = glm::scale(M, myscale);//Scale
 
-    simpleShader.BindMatrices(&M,&V,&P);
+      simpleShader.BindMatrices(&M,&V,&P);
 
-    ourModel.Draw(simpleShader);
-    SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 20+i);
-    frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
-    distance=Loss(image1, frameImage, favg,cff);
-    var_distance=last_distance-distance;
-    last_distance=distance;
-    cout << distance <<" "<<var_distance << endl;
+      ourModel.Draw(simpleShader);
+      // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, (j*10)+(k));
+      frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
+      distance=Loss(imageGray, frameImage, favg,cff);
 
-    /* unbind frameBuffer */
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      cout << distance << endl;
+
+      const float *pface = (const float*)glm::value_ptr(rotMat);
+      tempVec[0]=pface[0];
+      tempVec[1]=pface[4];
+      tempVec[2]=pface[8];
+
+      tempVec[3]=pface[1];
+      tempVec[4]=pface[5];
+      tempVec[5]=pface[9];
+      insertionFancy(fw,distance,tempVec,w);
+
+      /* unbind frameBuffer */
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
   }
 
-  for(unsigned int i=1;i<4;i++)
+  for(int j=1;j<4;j+=2)
   {
-    glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
-    /* Render here */
-    // Clear the colorbuffer
-    glClearColor(0.0,0.0,0.0,0);   // set the clear color to black
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    for(int k=0;k<4;k++)
+    {
+      //Bind FrameBuffer
+      glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
+      /* Render here */
+      // Clear the colorbuffer
+      glClearColor(0.0,0.0,0.0,0);   // set the clear color to black
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-    simpleShader.Use();
+      simpleShader.Use();
 
-    M = glm::mat4(1);//Init
-    // M = glm::translate(M, glm::vec3(0.0f,0.0f,0.0f));//Translate
-    M = glm::scale(M, glm::vec3(15.0f,15.0f,15.0f));//Scale
-    // M = glm::rotate(M, glm::radians(15.0f), glm::vec3(0.0f,0.0f,1.0f));//Rotate
-    // M = glm::rotate(M, glm::radians(15.0f), glm::vec3(1.0f,0.0f,0.0f));//Rotate
-    M = glm::rotate(M, glm::radians(90.0f*i), glm::vec3(1.0f,0.0f,0.0f));//Rotate
-    // M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0.0f,0.0f,-1.0f));//Rotate
+      //Transformations (Translate*Rotate*Scale)
+      M = glm::mat4(1);//Init
+      memcpy( glm::value_ptr( rotMat ), rotVec, sizeof( rotVec ) );
+      rotMat = glm::rotate(rotMat, glm::radians(90.0f*k), glm::vec3(0.0f,0.0f,1.0f));//Rotate
+      rotMat = glm::rotate(rotMat, glm::radians(90.0f*j), glm::vec3(0.0f,1.0f,0.0f));//Rotate
+      M = M * rotMat;
+      M = glm::scale(M, myscale);//Scale
 
-    simpleShader.BindMatrices(&M,&V,&P);
+      simpleShader.BindMatrices(&M,&V,&P);
 
-    ourModel.Draw(simpleShader);
-    SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 24+i);
-    frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
-    distance=Loss(image1, frameImage, favg,cff);
-    var_distance=last_distance-distance;
-    last_distance=distance;
-    cout << distance <<" "<<var_distance << endl;
+      ourModel.Draw(simpleShader);
+      // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, (100)+(j*10)+(k));
+      frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
+      distance=Loss(imageGray, frameImage, favg,cff);
 
-    /* unbind frameBuffer */
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      cout << distance << endl;
+      const float *pface = (const float*)glm::value_ptr(rotMat);
+      tempVec[0]=pface[0];
+      tempVec[1]=pface[4];
+      tempVec[2]=pface[8];
+
+      tempVec[3]=pface[1];
+      tempVec[4]=pface[5];
+      tempVec[5]=pface[9];
+      insertionFancy(fw,distance,tempVec,w);
+
+      /* unbind frameBuffer */
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
   }
+
+  cout<< endl;
+  for(int i=0;i<7;i++)
+  {
+    cout << fw[i]<< " ";
+  }
+  cout<< endl;
   ////END TEST CUBE FACES
+  // downhill(fw,
+  //         w,
+  //         myFrameBuffer,
+  //         simpleShader,
+  //         ourModel,
+  //         M,
+  //         V,
+  //         P,
+  //         myscale,
+  //         favg,
+  //         cff,
+  //         imageGray
+  //       );
+
+  // //Try to find pose
+  // cout << "--"<< endl;
+  // distance=1.0;
+  // last_distance=1.0;
+  // var_distance=1.0;
+  // for(unsigned int i=0;(i<40);i++)
+  // {
+  //   glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
+  //   /* Render here */
+  //   // Clear the colorbuffer
+  //   glClearColor(0.0,0.0,0.0,0);   // set the clear color to black
+  //   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  //
+  //
+  //   simpleShader.Use();
+  //
+  //   M = glm::mat4(1);//Init
+  //   // M = glm::translate(M, glm::vec3(0.0f,0.0f,0.0f));//Translate
+  //   M = glm::rotate(M, glm::radians(-40.0f-0.1f*i), glm::vec3(1.0,0.0f,0.0f));//Rotate
+  //   M = glm::rotate(M, glm::radians(70.0f), glm::vec3(0.0,1.0f,0.0f));//Rotate
+  //   M = glm::rotate(M, glm::radians(40.0f), glm::vec3(0.0,0.0f,1.0f));//Rotate
+  //   M = glm::scale(M, myscale);//Scale
+  //
+  //   simpleShader.BindMatrices(&M,&V,&P);
+  //
+  //   ourModel.Draw(simpleShader);
+  //   // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 20+i);
+  //   frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
+  //   distance=Loss(imageGray, frameImage, favg,cff);
+  //   var_distance=last_distance-distance;
+  //   last_distance=distance;
+  //   cout << distance <<" "<<var_distance << endl;
+  //
+  //   /* unbind frameBuffer */
+  //   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  // }
+
+  //End of t
+
+  // glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
+  // /* Render here */
+  // // Clear the colorbuffer
+  // glClearColor(0.0,0.0,0.0,0);   // set the clear color to black
+  // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  //
+  //
+  // simpleShader.Use();
+  //
+  // M = glm::mat4(1);//Init
+  // // M = glm::translate(M, glm::vec3(0.0f,0.0f,0.0f));//Translate
+  // // M = glm::rotate(M, glm::radians(-41.0f), glm::vec3(1.0,0.0f,0.0f));//Rotate
+  // //OPENGL COLOUMN WISE
+  //
+  // glm::vec3 myX(0.0f,-1.0f,0.0f);
+  // glm::vec3 myY(1.0f,0.0f,0.0f);
+  // glm::vec3 myZ=glm::cross(myX,myY);
+  // cout << myZ[0] << " " << myZ[1] << " " << myZ[2] << " " << endl;
+  //
+  // float rotVec[16] = {
+  //    0.0f, -1.0f, 0.0f, 0.0f,
+  //    1.0f, 0.0f, 0.0f, 0.0f,
+  //    0.0f, 0.0f, 1.0f, 0.0f,
+  //    0.0f, 0.0f, 0.0f, 1.0f
+  // };
+  // glm::mat4 rotMat;
+  // memcpy( glm::value_ptr( rotMat ), rotVec, sizeof( rotVec ) );
+  // //
+  // M = M * rotMat;
+  // M = glm::scale(M, glm::vec3(40.0f,40.0f,40.0f));//Scale
+  //
+  // simpleShader.BindMatrices(&M,&V,&P);
+  //
+  // ourModel.Draw(simpleShader);
+  // // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 80);
+  //
+  // /* unbind frameBuffer */
+  // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+  // glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
+  // /* Render here */
+  // // Clear the colorbuffer
+  // glClearColor(0.0,0.0,0.0,0);   // set the clear color to black
+  // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  //
+  //
+  // PhongShader.Use();
+  //
+  // M = glm::mat4(1);//Init
+  // // M = glm::translate(M, glm::vec3(0.0f,0.0f,0.0f));//Translate
+  // M = glm::rotate(M, glm::radians(-41.0f), glm::vec3(1.0,0.0f,0.0f));//Rotate
+  // M = glm::rotate(M, glm::radians(70.0f), glm::vec3(0.0,1.0f,0.0f));//Rotate
+  // M = glm::rotate(M, glm::radians(40.0f), glm::vec3(0.0,0.0f,1.0f));//Rotate
+  // M = glm::scale(M, glm::vec3(40.0f,40.0f,40.0f));//Scale
+  //
+  // PhongShader.BindMatrices(&M,&V,&P);
+  //
+  // ourModel.Draw(PhongShader);
+  // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 80);
+  //
+  // /* unbind frameBuffer */
+  // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
   // float distance=1.0;
   // std::vector< unsigned char > frameImage;
@@ -342,7 +471,7 @@ int main(void)
   //   // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 21);
   //
   //   frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
-  //   distance=Loss(image1, frameImage, favg,cff);
+  //   distance=Loss(imageGray, frameImage, favg,cff);
   //   var_distance=last_distance-distance;
   //   last_distance=distance;
   //   cout << distance <<" "<<var_distance << endl;
@@ -384,7 +513,7 @@ int main(void)
   //   // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 21);
   //
   //   frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
-  //   distance=Loss(image1, frameImage, favg,cff);
+  //   distance=Loss(imageGray, frameImage, favg,cff);
   //   var_distance=last_distance-distance;
   //   last_distance=distance;
   //   cout << distance <<" "<<var_distance << endl;
@@ -420,7 +549,7 @@ int main(void)
   //   // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 21);
   //
   //   frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
-  //   distance=Loss(image1, frameImage, favg,cff);
+  //   distance=Loss(imageGray, frameImage, favg,cff);
   //   var_distance=last_distance-distance;
   //   last_distance=distance;
   //   cout << distance <<" "<<var_distance << endl;
@@ -429,14 +558,14 @@ int main(void)
   //   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   // }
 
-  // //Texture Projection
-  // glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
-  // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 21);
-  // // frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
-  // std::vector< float > newUV = GetNewUV(WINDOW_WIDTH, WINDOW_HEIGHT);
-  // // MapTex(ourModel,frameImage,newUV,(unsigned int)WINDOW_WIDTH,(unsigned int)WINDOW_HEIGHT);
-  // MapTex(ourModel,imgProj,newUV,(unsigned int)WINDOW_WIDTH,(unsigned int)WINDOW_HEIGHT);
-  // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  //Texture Projection
+  glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
+  // SaveFrame(WINDOW_WIDTH, WINDOW_HEIGHT, 80);
+  frameImage = GetFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
+  std::vector< float > newUV = GetNewUV(WINDOW_WIDTH, WINDOW_HEIGHT);
+  // MapTex(ourModel,frameImage,newUV,(unsigned int)WINDOW_WIDTH,(unsigned int)WINDOW_HEIGHT);
+  MapTex(ourModel,imgProj,newUV,(unsigned int)WINDOW_WIDTH,(unsigned int)WINDOW_HEIGHT);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
 
