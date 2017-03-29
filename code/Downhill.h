@@ -1,29 +1,121 @@
 #include <stdlib.h>
 #define WINDOW_HEIGHT 1024
 #define WINDOW_WIDTH 1024
-#define MAX_ITER 200
+#define MAX_ITER 300
 #define MIN_ERROR 0.01
+#define MIN_VAR 0.00001
+#define N_DIMENSIONS 7
+#define N_DIMENSIONSSUM 8
+
+float specialRand()
+{
+  return ( (rand()%2) ? ((float)rand()/(float)(RAND_MAX)) : (-1.0*(float)rand()/(float)(RAND_MAX)) ) ;
+}
+
+void CopyArray(float B[],float A[],int n,float* placeholder, float* x,int m)
+{
+    for(int i = 0; i < n; i++)
+    {
+        A[i] = B[i];
+        for(int j=0;j<m;j++)
+        {
+          x[(i*m)+j] = placeholder[(i*m)+j];
+        }
+    }
+}
+
+//  Left run is A[iLeft :iRight-1].
+// Right run is A[iRight:iEnd-1  ].
+void BottomUpMerge(float A[],int iLeft,int iRight,int iEnd,float B[],float* placeholder, float* x,int m)
+{
+    int i = iLeft;
+    int j = iRight;
+    // While there are elements in the left or right runs...
+    for (int k = iLeft; k < iEnd; k++)
+    {
+        // If left run head exists and is <= existing right run head.
+        if (i < iRight && (j >= iEnd || A[i] <= A[j]))
+        {
+            B[k] = A[i];
+            for(int w=0;w<m;w++)
+            {
+              placeholder[(k*m)+w] = x[(i*m)+w] ;
+            }
+            i = i + 1;
+        }
+        else
+        {
+            B[k] = A[j];
+            for(int w=0;w<m;w++)
+            {
+              placeholder[(k*m)+w] = x[(j*m)+w] ;
+            }
+            j = j + 1;
+        }
+    }
+}
+
+
+
+
+// array A[] has the items to sort; array B[] is a work array
+void BottomUpMergeSort(float A[],int n, float* x,int m)
+{
+    float B[n];
+    float placeholder[n*m];
+    // Each 1-element run in A is already "sorted".
+    // Make successively longer sorted runs of length 2, 4, 8, 16... until whole array is sorted.
+    for (int width = 1; width < n; width = 2 * width)
+    {
+        // Array A is full of runs of length width.
+        for (int i = 0; i < n; i = i + 2 * width)
+        {
+            // Merge two runs: A[i:i+width-1] and A[i+width:i+2*width-1] to B[]
+            // or copy A[i:n-1] to B[] ( if(i+width >= n) )
+            BottomUpMerge(A, i, min(i+width, n), min(i+2*width, n), B, placeholder, x, m);
+        }
+        // Now work array B is full of runs of length 2*width.
+        // Copy array B to array A for next iteration.
+        // A more efficient implementation would swap the roles of A and B.
+        CopyArray(B, A, n, placeholder, x, m);
+        // Now array A is full of runs of length 2*width.
+    }
+}
+
+
+// void specialSort()
+// {
+//   for(int i=0;i<;i++)
+//   {
+//     if(value)
+//     {
+//
+//     }
+//   }
+// }
 
 void insertionFancy(float* fx,float value, float *face, float* x)
 {
   int j=-1;
 
-  for(int i=0;i<7;i++)
+  for(int i=0;i<(N_DIMENSIONSSUM);i++)
   {
     // cout << "value:"<< value << " fx[" << i << "]:" << fx[i] << endl;
     if(value<fx[i])
     {
-      for(int j=6;j>i;j--)
+      for(int j=N_DIMENSIONS;j>i;j--)
       {
         fx[j]=fx[j-1];
 
-        x[(j*6)]=x[((j-1)*6)];
-        x[(j*6)+1]=x[((j-1)*6)+1];
-        x[(j*6)+2]=x[((j-1)*6)+2];
+        x[(j*N_DIMENSIONS)]=x[((j-1)*N_DIMENSIONS)];
+        x[(j*N_DIMENSIONS)+1]=x[((j-1)*N_DIMENSIONS)+1];
+        x[(j*N_DIMENSIONS)+2]=x[((j-1)*N_DIMENSIONS)+2];
 
-        x[(j*6)+3]=x[((j-1)*6)+3];
-        x[(j*6)+4]=x[((j-1)*6)+4];
-        x[(j*6)+5]=x[((j-1)*6)+5];
+        x[(j*N_DIMENSIONS)+3]=x[((j-1)*N_DIMENSIONS)+3];
+        x[(j*N_DIMENSIONS)+4]=x[((j-1)*N_DIMENSIONS)+4];
+        x[(j*N_DIMENSIONS)+5]=x[((j-1)*N_DIMENSIONS)+5];
+
+        x[(j*N_DIMENSIONS)+6]=x[((j-1)*N_DIMENSIONS)+6];
       }
       fx[i]=value;
       j=i;
@@ -34,20 +126,19 @@ void insertionFancy(float* fx,float value, float *face, float* x)
   // cout << "\nfx[0]:" << fx[0]
   // << " fx[1]:" << fx[1]
   // << " fx[2]:" << fx[2]
-  // << " fx[3]:" << fx[3]
-  // << " fx[4]:" << fx[4]
-  // << " fx[5]:" << fx[5]
   // << " fx[6]:" << fx[6] << endl;
 
   if(j!=-1)
   {
-    x[(j*6)]=face[0];
-    x[(j*6)+1]=face[1];
-    x[(j*6)+2]=face[2];
+    x[(j*N_DIMENSIONS)]=face[0];
+    x[(j*N_DIMENSIONS)+1]=face[1];
+    x[(j*N_DIMENSIONS)+2]=face[2];
 
-    x[(j*6)+3]=face[3];
-    x[(j*6)+4]=face[4];
-    x[(j*6)+5]=face[5];
+    x[(j*N_DIMENSIONS)+3]=face[3];
+    x[(j*N_DIMENSIONS)+4]=face[4];
+    x[(j*N_DIMENSIONS)+5]=face[5];
+
+    x[(j*N_DIMENSIONS)+6]=face[6];
   }
 }
 
@@ -59,7 +150,6 @@ void downhill(float* fw,
               glm::mat4 & M,
               glm::mat4 & V,
               glm::mat4 & P,
-              glm::vec3 & myscale,
               double favg,
               double cff,
               Mat & imageGray
@@ -67,14 +157,15 @@ void downhill(float* fw,
 {
   //Init Variables
   std::vector< unsigned char > frameImage;
-  // float alfa=1.0;
-  // float beta=0.5;
+  float alfa=1.0;
+  float beta=1.0;
   float gama=0.5;
   float sigma=0.5;
   float distance=1.0;
   float distance_reflec=1.0;
   float distance_expan=1.0;
   float distance_contrac=1.0;
+  float distance_shrink=1.0;
   float last_distance=1.0;
   float var_distance=1.0;
   float rotVecNew[16] = {
@@ -84,33 +175,45 @@ void downhill(float* fw,
      0.0f, 0.0f, 0.0f, 1.0f
   };
   glm::mat4 rotMat;
-  float reflect[6];
-  float expanded[6];
-  float contracted[6];
-  for(int i=0;(i<MAX_ITER)&&(distance>MIN_ERROR);i++)
+  float reflect[N_DIMENSIONS];
+  float expanded[N_DIMENSIONS];
+  float contracted[N_DIMENSIONS];
+  float shrink[N_DIMENSIONS];
+  float centroid[N_DIMENSIONS];
+  for(int i=0;(i<MAX_ITER)&&(distance>MIN_ERROR)&&(fabs(var_distance)>MIN_VAR);i++)//&&(distance>MIN_ERROR)&&(fabs(var_distance)>MIN_ERROR)
   {
     //Calculate centroid
-    float centroid[6];
-    centroid[0]= (w[0]+w[6]+w[12]+w[18]+w[24]+w[30])/6;
-    centroid[1]= (w[1]+w[7]+w[13]+w[19]+w[25]+w[31])/6;
-    centroid[2]= (w[2]+w[8]+w[14]+w[20]+w[26]+w[32])/6;
 
-    centroid[3]= (w[3]+w[9]+w[15]+w[21]+w[27]+w[33])/6;
-    centroid[4]= (w[4]+w[10]+w[16]+w[22]+w[28]+w[34])/6;
-    centroid[5]= (w[5]+w[11]+w[17]+w[23]+w[29]+w[35])/6;
+    // centroid[0]= (w[0]+w[6]+w[12]+w[18]+w[24]+w[30])/6;
+    // centroid[1]= (w[1]+w[7]+w[13]+w[19]+w[25]+w[31])/6;
+    // centroid[2]= (w[2]+w[8]+w[14]+w[20]+w[26]+w[32])/6;
+    //
+    // centroid[3]= (w[3]+w[9]+w[15]+w[21]+w[27]+w[33])/6;
+    // centroid[4]= (w[4]+w[10]+w[16]+w[22]+w[28]+w[34])/6;
+    // centroid[5]= (w[5]+w[11]+w[17]+w[23]+w[29]+w[35])/6;
 
+    centroid[0]= (w[0]+w[N_DIMENSIONS]+w[(N_DIMENSIONS*2)]+w[(N_DIMENSIONS*3)]+w[(N_DIMENSIONS*4)]+w[(N_DIMENSIONS*5)]+w[(N_DIMENSIONS*6)])/7;
+    centroid[1]= (w[1]+w[N_DIMENSIONS+1]+w[(N_DIMENSIONS*2)+1]+w[(N_DIMENSIONS*3)+1]+w[(N_DIMENSIONS*4)+1]+w[(N_DIMENSIONS*5)+1]+w[(N_DIMENSIONS*6)+1])/7;
+    centroid[2]= (w[2]+w[N_DIMENSIONS+2]+w[(N_DIMENSIONS*2)+2]+w[(N_DIMENSIONS*3)+2]+w[(N_DIMENSIONS*4)+2]+w[(N_DIMENSIONS*5)+2]+w[(N_DIMENSIONS*6)+2])/7;
+
+    centroid[3]= (w[3]+w[N_DIMENSIONS+3]+w[(N_DIMENSIONS*2)+3]+w[(N_DIMENSIONS*3)+3]+w[(N_DIMENSIONS*4)+3]+w[(N_DIMENSIONS*5)+3]+w[(N_DIMENSIONS*6)+3])/7;
+    centroid[4]= (w[4]+w[N_DIMENSIONS+4]+w[(N_DIMENSIONS*2)+4]+w[(N_DIMENSIONS*3)+4]+w[(N_DIMENSIONS*4)+4]+w[(N_DIMENSIONS*5)+4]+w[(N_DIMENSIONS*6)+4])/7;
+    centroid[5]= (w[5]+w[N_DIMENSIONS+5]+w[(N_DIMENSIONS*2)+5]+w[(N_DIMENSIONS*3)+5]+w[(N_DIMENSIONS*4)+5]+w[(N_DIMENSIONS*5)+5]+w[(N_DIMENSIONS*6)+5])/7;
+
+    centroid[6]= (w[6]+w[N_DIMENSIONS+6]+w[(N_DIMENSIONS*2)+6]+w[(N_DIMENSIONS*3)+6]+w[(N_DIMENSIONS*4)+6]+w[(N_DIMENSIONS*5)+6]+w[(N_DIMENSIONS*6)+6])/7;
     // cout << centroid[0] << " " << centroid[1] << " " << centroid[2] << endl;
     // cout << centroid[3] << " " << centroid[4] << " " << centroid[5] << endl << endl;
     //Reflection
 
-    reflect[0] = centroid[0] + (centroid[0]-w[36]);
-    reflect[1] = centroid[1] + (centroid[1]-w[37]);
-    reflect[2] = centroid[2] + (centroid[2]-w[38]);
+    reflect[0] = centroid[0] + alfa*(centroid[0]-w[(N_DIMENSIONS*N_DIMENSIONS)]);
+    reflect[1] = centroid[1] + alfa*(centroid[1]-w[(N_DIMENSIONS*N_DIMENSIONS)+1]);
+    reflect[2] = centroid[2] + alfa*(centroid[2]-w[(N_DIMENSIONS*N_DIMENSIONS)+2]);
 
-    reflect[3] = centroid[3] + (centroid[3]-w[39]);
-    reflect[4] = centroid[4] + (centroid[4]-w[40]);
-    reflect[5] = centroid[5] + (centroid[5]-w[41]);
+    reflect[3] = centroid[3] + alfa*(centroid[3]-w[(N_DIMENSIONS*N_DIMENSIONS)+3]);
+    reflect[4] = centroid[4] + alfa*(centroid[4]-w[(N_DIMENSIONS*N_DIMENSIONS)+4]);
+    reflect[5] = centroid[5] + alfa*(centroid[5]-w[(N_DIMENSIONS*N_DIMENSIONS)+5]);
 
+    reflect[6] = centroid[6] + alfa*(centroid[6]-w[(N_DIMENSIONS*N_DIMENSIONS)+6]);
     float normX=sqrt(reflect[0]*reflect[0]+
                     reflect[1]*reflect[1]+
                     reflect[2]*reflect[2]);
@@ -158,7 +261,7 @@ void downhill(float* fw,
 
     memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
     M = M * rotMat;
-    M = glm::scale(M, myscale);//Scale
+    M = glm::scale(M, glm::vec3(reflect[6],reflect[6],reflect[6]) );//Scale
 
     simpleShader.BindMatrices(&M,&V,&P);
 
@@ -181,7 +284,7 @@ void downhill(float* fw,
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     //Check Reflection
-    if((distance_reflec>fw[0])&&(distance_reflec<fw[5]))//f(x1)<f(xr)<f(xn)
+    if((distance_reflec>fw[0])&&(distance_reflec<fw[N_DIMENSIONS-1]))//f(x1)<f(xr)<f(xn)
     {
       insertionFancy(fw,distance_reflec,reflect,w);
     }
@@ -192,14 +295,15 @@ void downhill(float* fw,
       //Do expansion
       //Calculate expanded
 
-      expanded[0]=reflect[0]+(reflect[0]-centroid[0]);
-      expanded[1]=reflect[1]+(reflect[1]-centroid[1]);
-      expanded[2]=reflect[2]+(reflect[2]-centroid[2]);
+      expanded[0]=reflect[0]+beta*(reflect[0]-centroid[0]);
+      expanded[1]=reflect[1]+beta*(reflect[1]-centroid[1]);
+      expanded[2]=reflect[2]+beta*(reflect[2]-centroid[2]);
 
-      expanded[3]=reflect[3]+(reflect[3]-centroid[3]);
-      expanded[4]=reflect[4]+(reflect[4]-centroid[4]);
-      expanded[5]=reflect[5]+(reflect[5]-centroid[5]);
+      expanded[3]=reflect[3]+beta*(reflect[3]-centroid[3]);
+      expanded[4]=reflect[4]+beta*(reflect[4]-centroid[4]);
+      expanded[5]=reflect[5]+beta*(reflect[5]-centroid[5]);
 
+      expanded[6]=reflect[6]+beta*(reflect[6]-centroid[6]);
       normX=sqrt(expanded[0]*expanded[0]+
                       expanded[1]*expanded[1]+
                       expanded[2]*expanded[2]);
@@ -245,7 +349,7 @@ void downhill(float* fw,
 
       memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
       M = M * rotMat;
-      M = glm::scale(M, myscale);//Scale
+      M = glm::scale(M, glm::vec3(expanded[6],expanded[6],expanded[6]));//Scale
 
       simpleShader.BindMatrices(&M,&V,&P);
 
@@ -272,17 +376,19 @@ void downhill(float* fw,
       }
     }
     //Contraction
-    if(distance_reflec>fw[5])//f(xr)>f(xn)
+    if(distance_reflec>fw[N_DIMENSIONS-1])//f(xr)>f(xn)
     {
       //Do Contraction
 
-      contracted[0]=centroid[0]+gama*(w[36]-centroid[0]);
-      contracted[1]=centroid[1]+gama*(w[37]-centroid[1]);
-      contracted[2]=centroid[2]+gama*(w[38]-centroid[2]);
+      contracted[0]=centroid[0]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)]-centroid[0]);
+      contracted[1]=centroid[1]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)+1]-centroid[1]);
+      contracted[2]=centroid[2]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)+2]-centroid[2]);
 
-      contracted[3]=centroid[3]+gama*(w[39]-centroid[3]);
-      contracted[4]=centroid[4]+gama*(w[40]-centroid[4]);
-      contracted[5]=centroid[5]+gama*(w[41]-centroid[5]);
+      contracted[3]=centroid[3]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)+3]-centroid[3]);
+      contracted[4]=centroid[4]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)+4]-centroid[4]);
+      contracted[5]=centroid[5]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)+5]-centroid[5]);
+
+      contracted[6]=centroid[6]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)+6]-centroid[6]);
 
       normX=sqrt(contracted[0]*contracted[0]+
                       contracted[1]*contracted[1]+
@@ -329,7 +435,7 @@ void downhill(float* fw,
 
       memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
       M = M * rotMat;
-      M = glm::scale(M, myscale);//Scale
+      M = glm::scale(M, glm::vec3(contracted[6],contracted[6],contracted[6]) );//Scale
 
       simpleShader.BindMatrices(&M,&V,&P);
 
@@ -345,38 +451,40 @@ void downhill(float* fw,
 
       /* unbind frameBuffer */
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
-      if(distance_contrac<fw[6])
+      if(distance_contrac<fw[N_DIMENSIONS])
       {
         insertionFancy(fw,distance_contrac,contracted,w);
       }
       else
       {
         //Shrink
-        for(int j=1;j<7;j++)
+        for(int j=1;j<N_DIMENSIONSSUM;j++)
         {
-          w[(j*6)]=w[0]+sigma*(w[(j*6)]-w[0]);
-          w[(j*6)+1]=w[1]+sigma*(w[(j*6)+1]-w[1]);
-          w[(j*6)+2]=w[2]+sigma*(w[(j*6)+2]-w[2]);
+          shrink[0]=w[0]+sigma*(w[(j*N_DIMENSIONS)]-w[0]);
+          shrink[1]=w[1]+sigma*(w[(j*N_DIMENSIONS)+1]-w[1]);
+          shrink[2]=w[2]+sigma*(w[(j*N_DIMENSIONS)+2]-w[2]);
 
-          w[(j*6)+3]=w[3]+sigma*(w[(j*6)+3]-w[3]);
-          w[(j*6)+4]=w[4]+sigma*(w[(j*6)+4]-w[4]);
-          w[(j*6)+5]=w[5]+sigma*(w[(j*6)+5]-w[5]);
+          shrink[3]=w[3]+sigma*(w[(j*N_DIMENSIONS)+3]-w[3]);
+          shrink[4]=w[4]+sigma*(w[(j*N_DIMENSIONS)+4]-w[4]);
+          shrink[5]=w[5]+sigma*(w[(j*N_DIMENSIONS)+5]-w[5]);
 
-          normX=sqrt(w[(j*6)]*w[(j*6)]+
-                      w[(j*6)+1]*w[(j*6)+1]+
-                      w[(j*6)+2]*w[(j*6)+2]);
+          shrink[6]=w[6]+sigma*(w[(j*N_DIMENSIONS)+6]-w[6]);
 
-          normY=sqrt(w[(j*6)+3]*w[(j*6)+3]+
-                      w[(j*6)+4]*w[(j*6)+4]+
-                      w[(j*6)+5]*w[(j*6)+5]);
+          normX=sqrt(shrink[0]*shrink[0]+
+                      shrink[1]*shrink[1]+
+                      shrink[2]*shrink[2]);
 
-          w[(j*6)] = w[(j*6)+0]/normX;
-          w[(j*6)+1] = w[(j*6)+1]/normX;
-          w[(j*6)+2] = w[(j*6)+2]/normX;
+          normY=sqrt(shrink[3]*shrink[3]+
+                      shrink[4]*shrink[4]+
+                      shrink[5]*shrink[5]);
 
-          w[(j*6)+3] = w[(j*6)+3]/normY;
-          w[(j*6)+4] = w[(j*6)+4]/normY;
-          w[(j*6)+5] = w[(j*6)+5]/normY;
+          shrink[0] = shrink[0]/normX;
+          shrink[1] = shrink[1]/normX;
+          shrink[2] = shrink[2]/normX;
+
+          shrink[3] = shrink[3]/normY;
+          shrink[4] = shrink[4]/normY;
+          shrink[5] = shrink[5]/normY;
 
           //Bind FrameBuffer
           glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
@@ -391,24 +499,24 @@ void downhill(float* fw,
           //Transformations (Translate*Rotate*Scale)
           M = glm::mat4(1);//Init
 
-          glm::vec3 myZ=cross(glm::vec3(w[(j*6)],w[(j*6)+1],w[(j*6)+2]),glm::vec3(w[(j*6)+3],w[(j*6)+4],w[(j*6)+5]) );
+          glm::vec3 myZ=cross(glm::vec3(shrink[0],shrink[1],shrink[2]),glm::vec3(shrink[3],shrink[4],shrink[5]) );
           // cout << "{" << myZ[0] << "," << myZ[1] << "," << myZ[2] << "} " << endl << endl;
 
-          rotVecNew[0]=w[(j*6)];//x1
-          rotVecNew[1]=w[(j*6)+3];//y1
+          rotVecNew[0]=shrink[0];//x1
+          rotVecNew[1]=shrink[3];//y1
           rotVecNew[2]=myZ[0];//z1
 
-          rotVecNew[4]=w[(j*6)+1];//x2
-          rotVecNew[5]=w[(j*6)+4];//y2
+          rotVecNew[4]=shrink[1];//x2
+          rotVecNew[5]=shrink[4];//y2
           rotVecNew[6]=myZ[1];//z2
 
-          rotVecNew[8]=w[(j*6)+2];//x3
-          rotVecNew[9]=w[(j*6)+5];//y3
+          rotVecNew[8]=shrink[2];//x3
+          rotVecNew[9]=shrink[5];//y3
           rotVecNew[10]=myZ[2];//z3
 
           memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
           M = M * rotMat;
-          M = glm::scale(M, myscale);//Scale
+          M = glm::scale(M, glm::vec3(shrink[6],shrink[6],shrink[6]) );//Scale
 
           simpleShader.BindMatrices(&M,&V,&P);
 
@@ -418,17 +526,38 @@ void downhill(float* fw,
           distance=Loss(imageGray, frameImage, favg,cff);
           var_distance=last_distance-distance;
           last_distance=distance;
-          fw[j]=distance;
+          distance_shrink=distance;
 
           cout << "\ndownhill calcule shrink: distance:" <<distance << " var_distance: " << var_distance << endl;
 
           /* unbind frameBuffer */
           glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+          w[(j*N_DIMENSIONS)]=shrink[0];
+          w[(j*N_DIMENSIONS)+1]=shrink[1];
+          w[(j*N_DIMENSIONS)+2]=shrink[2];
+
+          w[(j*N_DIMENSIONS)+3]=shrink[3];
+          w[(j*N_DIMENSIONS)+4]=shrink[4];
+          w[(j*N_DIMENSIONS)+5]=shrink[5];
+
+          w[(j*N_DIMENSIONS)+6]=shrink[6];
+          fw[j]=distance_shrink;
+          // if(distance_shrink<fw[N_DIMENSIONS])
+          // {
+          //   insertionFancy(fw,distance_shrink,shrink,w);
+          //   break;
+          // }
+
         }//endfor
+        BottomUpMergeSort(fw,N_DIMENSIONSSUM,w,N_DIMENSIONS);
       }//endelse
     }//endif
 
   }//endfor
+
+  cout << " fw[0]="<<fw[0] << " fw[1]="<<fw[1] << " fw[2]="<<fw[2] << " fw[3]="<<fw[3] << " fw[4]="<<fw[4] << " fw[5]="<<fw[5] << " fw[6]="<<fw[6] << " fw[7]="<<fw[7] << endl;
+  cout << "fw[0]="<<fw[0]<<" w[0]="<< w[0]<< " w[1]="<< w[1]<< " w[2]="<< w[2]<< " w[3]="<< w[3]<< " w[4]="<< w[4]<< " w[5]="<< w[5]<< " w[6]="<< w[6] << endl;
 
   //Bind FrameBuffer
   glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
@@ -460,7 +589,7 @@ void downhill(float* fw,
 
   memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
   M = M * rotMat;
-  M = glm::scale(M, myscale);//Scale
+  M = glm::scale(M, glm::vec3(w[6],w[6],w[6]) );//Scale
 
   simpleShader.BindMatrices(&M,&V,&P);
 
