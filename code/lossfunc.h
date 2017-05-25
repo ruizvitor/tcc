@@ -8,21 +8,6 @@
 // invert(covar, icovar, DECOMP_SVD);
 // double dist=Mahalanobis( perfect, test, invcovar );
 
-// void DownHillSimplex(float &x)
-// {
-//   float y[]=(sizeof(x));
-//   //Order
-//   x[(i*4)+3]
-//   //Centroid
-//
-//   //Reflection
-//
-//   //Expansion
-//
-//   //Contraction
-//
-//   //Shrink
-// }
 
 double Mean(cv::Mat &image)
 {

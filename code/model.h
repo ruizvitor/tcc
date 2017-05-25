@@ -34,11 +34,11 @@ public:
 
   /*  Functions   */
   // Constructor, expects a filepath to a 3D model.
-  Model(string const & path, bool gamma = false) : gammaCorrection(gamma)
-  {
-    this->loadModel(path);
-    cout << "Model Load Complete" << endl;
-  }
+  // Model(string const & path, bool gamma = false) : gammaCorrection(gamma)
+  // {
+  //   this->loadModel(path);
+  //   cout << "Model Load Complete" << endl;
+  // }
 
   // Draws the model, and thus all its meshes
   void Draw(Shader shader)
@@ -47,8 +47,6 @@ public:
     this->meshes[i].Draw(shader);
   }
 
-private:
-  /*  Functions   */
   // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
   void loadModel(string path)
   {
@@ -67,6 +65,10 @@ private:
     // Process ASSIMP's root node recursively
     this->processNode(scene->mRootNode, scene);
   }
+
+private:
+  /*  Functions   */
+
 
   // Processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
   void processNode(aiNode* node, const aiScene* scene)
@@ -214,6 +216,21 @@ void flipImg(T1 &old, T2 &res, T3 m, T3 n)
       res[3*((i*m)+j)]=old[3*(( (n-i) *m)+j)];
       res[3*((i*m)+j)+1]=old[3*(( (n-i) *m)+j)+1];
       res[3*((i*m)+j)+2]=old[3*(( (n-i) *m)+j)+2];
+    }
+  }
+}
+
+template<typename T1,typename T2,typename T3>
+void flipImgAlpha(T1 &old, T2 &res, T3 m, T3 n)
+{
+  for ( int i = 0; i < n; i++)
+  {
+    for ( int j = 0; j < m; j++)
+    {
+      res[4*((i*m)+j)]=old[4*(( (n-i) *m)+j)];
+      res[4*((i*m)+j)+1]=old[4*(( (n-i) *m)+j)+1];
+      res[4*((i*m)+j)+2]=old[4*(( (n-i) *m)+j)+2];
+      res[4*((i*m)+j)+3]=old[4*(( (n-i) *m)+j)+3];
     }
   }
 }

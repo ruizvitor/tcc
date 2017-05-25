@@ -1,11 +1,5 @@
 #include <stdlib.h>
-#define WINDOW_HEIGHT 1024
-#define WINDOW_WIDTH 1024
-#define MAX_ITER 300
-#define MIN_ERROR 0.01
-#define MIN_VAR 0.00001
-#define N_DIMENSIONS 7
-#define N_DIMENSIONSSUM 8
+#include "Macros.h"
 
 float specialRand()
 {
@@ -94,28 +88,22 @@ void BottomUpMergeSort(float A[],int n, float* x,int m)
 //   }
 // }
 
-void insertionFancy(float* fx,float value, float *face, float* x)
+void insertionFancy(float* fx,float value, float *face, float* x,int n)
 {
   int j=-1;
-
-  for(int i=0;i<(N_DIMENSIONSSUM);i++)
+  int nsum=n+1;
+  for(int i=0;i<(nsum);i++)
   {
     // cout << "value:"<< value << " fx[" << i << "]:" << fx[i] << endl;
     if(value<fx[i])
     {
-      for(int j=N_DIMENSIONS;j>i;j--)
+      for(int j=n;j>i;j--)
       {
         fx[j]=fx[j-1];
-
-        x[(j*N_DIMENSIONS)]=x[((j-1)*N_DIMENSIONS)];
-        x[(j*N_DIMENSIONS)+1]=x[((j-1)*N_DIMENSIONS)+1];
-        x[(j*N_DIMENSIONS)+2]=x[((j-1)*N_DIMENSIONS)+2];
-
-        x[(j*N_DIMENSIONS)+3]=x[((j-1)*N_DIMENSIONS)+3];
-        x[(j*N_DIMENSIONS)+4]=x[((j-1)*N_DIMENSIONS)+4];
-        x[(j*N_DIMENSIONS)+5]=x[((j-1)*N_DIMENSIONS)+5];
-
-        x[(j*N_DIMENSIONS)+6]=x[((j-1)*N_DIMENSIONS)+6];
+        for(int k=0;k<n;k++)
+        {
+          x[(j*n)+k]=x[((j-1)*n)+k];
+        }
       }
       fx[i]=value;
       j=i;
@@ -130,15 +118,10 @@ void insertionFancy(float* fx,float value, float *face, float* x)
 
   if(j!=-1)
   {
-    x[(j*N_DIMENSIONS)]=face[0];
-    x[(j*N_DIMENSIONS)+1]=face[1];
-    x[(j*N_DIMENSIONS)+2]=face[2];
-
-    x[(j*N_DIMENSIONS)+3]=face[3];
-    x[(j*N_DIMENSIONS)+4]=face[4];
-    x[(j*N_DIMENSIONS)+5]=face[5];
-
-    x[(j*N_DIMENSIONS)+6]=face[6];
+    for(int k=0;k<n;k++)
+    {
+      x[(j*n)+k]=face[k];
+    }
   }
 }
 
@@ -152,7 +135,8 @@ void downhill(float* fw,
               glm::mat4 & P,
               double favg,
               double cff,
-              Mat & imageGray
+              Mat & imageGray,
+              float firstscale
             )
 {
   //Init Variables
@@ -168,12 +152,6 @@ void downhill(float* fw,
   float distance_shrink=1.0;
   float last_distance=1.0;
   float var_distance=1.0;
-  float rotVecNew[16] = {
-     1.0f, 0.0f, 0.0f, 0.0f,
-     0.0f, 1.0f, 0.0f, 0.0f,
-     0.0f, 0.0f, 1.0f, 0.0f,
-     0.0f, 0.0f, 0.0f, 1.0f
-  };
   glm::mat4 rotMat;
   float reflect[N_DIMENSIONS];
   float expanded[N_DIMENSIONS];
@@ -192,15 +170,18 @@ void downhill(float* fw,
     // centroid[4]= (w[4]+w[10]+w[16]+w[22]+w[28]+w[34])/6;
     // centroid[5]= (w[5]+w[11]+w[17]+w[23]+w[29]+w[35])/6;
 
-    centroid[0]= (w[0]+w[N_DIMENSIONS]+w[(N_DIMENSIONS*2)]+w[(N_DIMENSIONS*3)]+w[(N_DIMENSIONS*4)]+w[(N_DIMENSIONS*5)]+w[(N_DIMENSIONS*6)])/7;
-    centroid[1]= (w[1]+w[N_DIMENSIONS+1]+w[(N_DIMENSIONS*2)+1]+w[(N_DIMENSIONS*3)+1]+w[(N_DIMENSIONS*4)+1]+w[(N_DIMENSIONS*5)+1]+w[(N_DIMENSIONS*6)+1])/7;
-    centroid[2]= (w[2]+w[N_DIMENSIONS+2]+w[(N_DIMENSIONS*2)+2]+w[(N_DIMENSIONS*3)+2]+w[(N_DIMENSIONS*4)+2]+w[(N_DIMENSIONS*5)+2]+w[(N_DIMENSIONS*6)+2])/7;
+    centroid[0]= (w[0]+w[N_DIMENSIONS]+w[(N_DIMENSIONS*2)]+w[(N_DIMENSIONS*3)]+w[(N_DIMENSIONS*4)]+w[(N_DIMENSIONS*5)]+w[(N_DIMENSIONS*6)]+w[(N_DIMENSIONS*7)]+w[(N_DIMENSIONS*8)] )/9;
+    centroid[1]= (w[1]+w[N_DIMENSIONS+1]+w[(N_DIMENSIONS*2)+1]+w[(N_DIMENSIONS*3)+1]+w[(N_DIMENSIONS*4)+1]+w[(N_DIMENSIONS*5)+1]+w[(N_DIMENSIONS*6)+1]+w[(N_DIMENSIONS*7)+1]+w[(N_DIMENSIONS*8)+1])/9;
+    centroid[2]= (w[2]+w[N_DIMENSIONS+2]+w[(N_DIMENSIONS*2)+2]+w[(N_DIMENSIONS*3)+2]+w[(N_DIMENSIONS*4)+2]+w[(N_DIMENSIONS*5)+2]+w[(N_DIMENSIONS*6)+2]+w[(N_DIMENSIONS*7)+2]+w[(N_DIMENSIONS*8)+2])/9;
 
-    centroid[3]= (w[3]+w[N_DIMENSIONS+3]+w[(N_DIMENSIONS*2)+3]+w[(N_DIMENSIONS*3)+3]+w[(N_DIMENSIONS*4)+3]+w[(N_DIMENSIONS*5)+3]+w[(N_DIMENSIONS*6)+3])/7;
-    centroid[4]= (w[4]+w[N_DIMENSIONS+4]+w[(N_DIMENSIONS*2)+4]+w[(N_DIMENSIONS*3)+4]+w[(N_DIMENSIONS*4)+4]+w[(N_DIMENSIONS*5)+4]+w[(N_DIMENSIONS*6)+4])/7;
-    centroid[5]= (w[5]+w[N_DIMENSIONS+5]+w[(N_DIMENSIONS*2)+5]+w[(N_DIMENSIONS*3)+5]+w[(N_DIMENSIONS*4)+5]+w[(N_DIMENSIONS*5)+5]+w[(N_DIMENSIONS*6)+5])/7;
+    centroid[3]= (w[3]+w[N_DIMENSIONS+3]+w[(N_DIMENSIONS*2)+3]+w[(N_DIMENSIONS*3)+3]+w[(N_DIMENSIONS*4)+3]+w[(N_DIMENSIONS*5)+3]+w[(N_DIMENSIONS*6)+3]+w[(N_DIMENSIONS*7)+3]+w[(N_DIMENSIONS*8)+3])/9;
+    centroid[4]= (w[4]+w[N_DIMENSIONS+4]+w[(N_DIMENSIONS*2)+4]+w[(N_DIMENSIONS*3)+4]+w[(N_DIMENSIONS*4)+4]+w[(N_DIMENSIONS*5)+4]+w[(N_DIMENSIONS*6)+4]+w[(N_DIMENSIONS*7)+4]+w[(N_DIMENSIONS*8)+4])/9;
+    centroid[5]= (w[5]+w[N_DIMENSIONS+5]+w[(N_DIMENSIONS*2)+5]+w[(N_DIMENSIONS*3)+5]+w[(N_DIMENSIONS*4)+5]+w[(N_DIMENSIONS*5)+5]+w[(N_DIMENSIONS*6)+5]+w[(N_DIMENSIONS*7)+5]+w[(N_DIMENSIONS*8)+5])/9;
 
-    centroid[6]= (w[6]+w[N_DIMENSIONS+6]+w[(N_DIMENSIONS*2)+6]+w[(N_DIMENSIONS*3)+6]+w[(N_DIMENSIONS*4)+6]+w[(N_DIMENSIONS*5)+6]+w[(N_DIMENSIONS*6)+6])/7;
+    centroid[6]= (w[6]+w[N_DIMENSIONS+6]+w[(N_DIMENSIONS*2)+6]+w[(N_DIMENSIONS*3)+6]+w[(N_DIMENSIONS*4)+6]+w[(N_DIMENSIONS*5)+6]+w[(N_DIMENSIONS*6)+6]+w[(N_DIMENSIONS*7)+6]+w[(N_DIMENSIONS*8)+6])/9;
+
+    centroid[7]= (w[7]+w[N_DIMENSIONS+7]+w[(N_DIMENSIONS*2)+7]+w[(N_DIMENSIONS*3)+7]+w[(N_DIMENSIONS*4)+7]+w[(N_DIMENSIONS*5)+7]+w[(N_DIMENSIONS*6)+7]+w[(N_DIMENSIONS*7)+7]+w[(N_DIMENSIONS*8)+7])/9;
+    centroid[8]= (w[8]+w[N_DIMENSIONS+8]+w[(N_DIMENSIONS*2)+8]+w[(N_DIMENSIONS*3)+8]+w[(N_DIMENSIONS*4)+8]+w[(N_DIMENSIONS*5)+8]+w[(N_DIMENSIONS*6)+8]+w[(N_DIMENSIONS*7)+8]+w[(N_DIMENSIONS*8)+8])/9;
     // cout << centroid[0] << " " << centroid[1] << " " << centroid[2] << endl;
     // cout << centroid[3] << " " << centroid[4] << " " << centroid[5] << endl << endl;
     //Reflection
@@ -214,6 +195,9 @@ void downhill(float* fw,
     reflect[5] = centroid[5] + alfa*(centroid[5]-w[(N_DIMENSIONS*N_DIMENSIONS)+5]);
 
     reflect[6] = centroid[6] + alfa*(centroid[6]-w[(N_DIMENSIONS*N_DIMENSIONS)+6]);
+
+    reflect[7] = centroid[7] + alfa*(centroid[7]-w[(N_DIMENSIONS*N_DIMENSIONS)+7]);
+    reflect[8] = centroid[8] + alfa*(centroid[8]-w[(N_DIMENSIONS*N_DIMENSIONS)+8]);
     float normX=sqrt(reflect[0]*reflect[0]+
                     reflect[1]*reflect[1]+
                     reflect[2]*reflect[2]);
@@ -243,23 +227,35 @@ void downhill(float* fw,
 
     //Transformations (Translate*Rotate*Scale)
     M = glm::mat4(1);//Init
-
+    M = glm::translate(M, glm::vec3(reflect[7],reflect[8],0.0f));//Translate
     glm::vec3 myZ=cross(glm::vec3(reflect[0],reflect[1],reflect[2]),glm::vec3(reflect[3],reflect[4],reflect[5]) );
     // cout << "{" << myZ[0] << "," << myZ[1] << "," << myZ[2] << "} " << endl << endl;
 
-    rotVecNew[0]=reflect[0];//x1
-    rotVecNew[1]=reflect[3];//y1
-    rotVecNew[2]=myZ[0];//z1
+    // rotVecNew[0]=reflect[0];//x1
+    // rotVecNew[1]=reflect[3];//y1
+    // rotVecNew[2]=myZ[0];//z1
+    //
+    // rotVecNew[4]=reflect[1];//x2
+    // rotVecNew[5]=reflect[4];//y2
+    // rotVecNew[6]=myZ[1];//z2
+    //
+    // rotVecNew[8]=reflect[2];//x3
+    // rotVecNew[9]=reflect[5];//y3
+    // rotVecNew[10]=myZ[2];//z3
 
-    rotVecNew[4]=reflect[1];//x2
-    rotVecNew[5]=reflect[4];//y2
-    rotVecNew[6]=myZ[1];//z2
+    rotMat[0][0]=reflect[0];//x1
+    rotMat[1][0]=reflect[3];//y1
+    rotMat[2][0]=myZ[0];//z1
 
-    rotVecNew[8]=reflect[2];//x3
-    rotVecNew[9]=reflect[5];//y3
-    rotVecNew[10]=myZ[2];//z3
+    rotMat[0][1]=reflect[1];//x2
+    rotMat[1][1]=reflect[4];//y2
+    rotMat[2][1]=myZ[1];//z2
 
-    memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
+    rotMat[0][2]=reflect[2];//x3
+    rotMat[1][2]=reflect[5];//y3
+    rotMat[2][2]=myZ[2];//z3
+
+    // memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
     M = M * rotMat;
     M = glm::scale(M, glm::vec3(reflect[6],reflect[6],reflect[6]) );//Scale
 
@@ -286,7 +282,7 @@ void downhill(float* fw,
     //Check Reflection
     if((distance_reflec>fw[0])&&(distance_reflec<fw[N_DIMENSIONS-1]))//f(x1)<f(xr)<f(xn)
     {
-      insertionFancy(fw,distance_reflec,reflect,w);
+      insertionFancy(fw,distance_reflec,reflect,w,N_DIMENSIONS);
     }
 
     //Expansion
@@ -304,6 +300,9 @@ void downhill(float* fw,
       expanded[5]=reflect[5]+beta*(reflect[5]-centroid[5]);
 
       expanded[6]=reflect[6]+beta*(reflect[6]-centroid[6]);
+
+      expanded[7]=reflect[7]+beta*(reflect[7]-centroid[7]);
+      expanded[8]=reflect[8]+beta*(reflect[8]-centroid[8]);
       normX=sqrt(expanded[0]*expanded[0]+
                       expanded[1]*expanded[1]+
                       expanded[2]*expanded[2]);
@@ -331,23 +330,35 @@ void downhill(float* fw,
 
       //Transformations (Translate*Rotate*Scale)
       M = glm::mat4(1);//Init
-
+      M = glm::translate(M, glm::vec3(expanded[7],expanded[8],0.0f));//Translate
       glm::vec3 myZ=cross(glm::vec3(expanded[0],expanded[1],expanded[2]),glm::vec3(expanded[3],expanded[4],expanded[5]) );
       // cout << "{" << myZ[0] << "," << myZ[1] << "," << myZ[2] << "} " << endl << endl;
 
-      rotVecNew[0]=expanded[0];//x1
-      rotVecNew[1]=expanded[3];//y1
-      rotVecNew[2]=myZ[0];//z1
+      // rotVecNew[0]=expanded[0];//x1
+      // rotVecNew[1]=expanded[3];//y1
+      // rotVecNew[2]=myZ[0];//z1
+      //
+      // rotVecNew[4]=expanded[1];//x2
+      // rotVecNew[5]=expanded[4];//y2
+      // rotVecNew[6]=myZ[1];//z2
+      //
+      // rotVecNew[8]=expanded[2];//x3
+      // rotVecNew[9]=expanded[5];//y3
+      // rotVecNew[10]=myZ[2];//z3
 
-      rotVecNew[4]=expanded[1];//x2
-      rotVecNew[5]=expanded[4];//y2
-      rotVecNew[6]=myZ[1];//z2
+      rotMat[0][0]=expanded[0];//x1
+      rotMat[1][0]=expanded[3];//y1
+      rotMat[2][0]=myZ[0];//z1
 
-      rotVecNew[8]=expanded[2];//x3
-      rotVecNew[9]=expanded[5];//y3
-      rotVecNew[10]=myZ[2];//z3
+      rotMat[0][1]=expanded[1];//x2
+      rotMat[1][1]=expanded[4];//y2
+      rotMat[2][1]=myZ[1];//z2
 
-      memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
+      rotMat[0][2]=expanded[2];//x3
+      rotMat[1][2]=expanded[5];//y3
+      rotMat[2][2]=myZ[2];//z3
+
+      // memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
       M = M * rotMat;
       M = glm::scale(M, glm::vec3(expanded[6],expanded[6],expanded[6]));//Scale
 
@@ -368,11 +379,11 @@ void downhill(float* fw,
 
       if(distance_expan<distance_reflec)
       {
-        insertionFancy(fw,distance_expan,expanded,w);
+        insertionFancy(fw,distance_expan,expanded,w,N_DIMENSIONS);
       }
       else
       {
-        insertionFancy(fw,distance_reflec,reflect,w);
+        insertionFancy(fw,distance_reflec,reflect,w,N_DIMENSIONS);
       }
     }
     //Contraction
@@ -389,6 +400,9 @@ void downhill(float* fw,
       contracted[5]=centroid[5]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)+5]-centroid[5]);
 
       contracted[6]=centroid[6]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)+6]-centroid[6]);
+
+      contracted[7]=centroid[7]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)+7]-centroid[7]);
+      contracted[8]=centroid[8]+gama*(w[(N_DIMENSIONS*N_DIMENSIONS)+8]-centroid[8]);
 
       normX=sqrt(contracted[0]*contracted[0]+
                       contracted[1]*contracted[1]+
@@ -417,23 +431,35 @@ void downhill(float* fw,
 
       //Transformations (Translate*Rotate*Scale)
       M = glm::mat4(1);//Init
-
+      M = glm::translate(M, glm::vec3(contracted[7],contracted[8],0.0f));//Translate
       glm::vec3 myZ=cross(glm::vec3(contracted[0],contracted[1],contracted[2]),glm::vec3(contracted[3],contracted[4],contracted[5]) );
       // cout << "{" << myZ[0] << "," << myZ[1] << "," << myZ[2] << "} " << endl << endl;
 
-      rotVecNew[0]=contracted[0];//x1
-      rotVecNew[1]=contracted[3];//y1
-      rotVecNew[2]=myZ[0];//z1
+      // rotVecNew[0]=contracted[0];//x1
+      // rotVecNew[1]=contracted[3];//y1
+      // rotVecNew[2]=myZ[0];//z1
+      //
+      // rotVecNew[4]=contracted[1];//x2
+      // rotVecNew[5]=contracted[4];//y2
+      // rotVecNew[6]=myZ[1];//z2
+      //
+      // rotVecNew[8]=contracted[2];//x3
+      // rotVecNew[9]=contracted[5];//y3
+      // rotVecNew[10]=myZ[2];//z3
 
-      rotVecNew[4]=contracted[1];//x2
-      rotVecNew[5]=contracted[4];//y2
-      rotVecNew[6]=myZ[1];//z2
+      rotMat[0][0]=contracted[0];//x1
+      rotMat[1][0]=contracted[3];//y1
+      rotMat[2][0]=myZ[0];//z1
 
-      rotVecNew[8]=contracted[2];//x3
-      rotVecNew[9]=contracted[5];//y3
-      rotVecNew[10]=myZ[2];//z3
+      rotMat[0][1]=contracted[1];//x2
+      rotMat[1][1]=contracted[4];//y2
+      rotMat[2][1]=myZ[1];//z2
 
-      memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
+      rotMat[0][2]=contracted[2];//x3
+      rotMat[1][2]=contracted[5];//y3
+      rotMat[2][2]=myZ[2];//z3
+
+      // memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
       M = M * rotMat;
       M = glm::scale(M, glm::vec3(contracted[6],contracted[6],contracted[6]) );//Scale
 
@@ -453,7 +479,7 @@ void downhill(float* fw,
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
       if(distance_contrac<fw[N_DIMENSIONS])
       {
-        insertionFancy(fw,distance_contrac,contracted,w);
+        insertionFancy(fw,distance_contrac,contracted,w,N_DIMENSIONS);
       }
       else
       {
@@ -469,6 +495,9 @@ void downhill(float* fw,
           shrink[5]=w[5]+sigma*(w[(j*N_DIMENSIONS)+5]-w[5]);
 
           shrink[6]=w[6]+sigma*(w[(j*N_DIMENSIONS)+6]-w[6]);
+
+          shrink[7]=w[7]+sigma*(w[(j*N_DIMENSIONS)+7]-w[7]);
+          shrink[8]=w[8]+sigma*(w[(j*N_DIMENSIONS)+8]-w[8]);
 
           normX=sqrt(shrink[0]*shrink[0]+
                       shrink[1]*shrink[1]+
@@ -498,23 +527,36 @@ void downhill(float* fw,
 
           //Transformations (Translate*Rotate*Scale)
           M = glm::mat4(1);//Init
-
+          M = glm::translate(M, glm::vec3(shrink[7],shrink[8],0.0f ));//Translate
           glm::vec3 myZ=cross(glm::vec3(shrink[0],shrink[1],shrink[2]),glm::vec3(shrink[3],shrink[4],shrink[5]) );
           // cout << "{" << myZ[0] << "," << myZ[1] << "," << myZ[2] << "} " << endl << endl;
 
-          rotVecNew[0]=shrink[0];//x1
-          rotVecNew[1]=shrink[3];//y1
-          rotVecNew[2]=myZ[0];//z1
+          // rotVecNew[0]=shrink[0];//x1
+          // rotVecNew[1]=shrink[3];//y1
+          // rotVecNew[2]=myZ[0];//z1
+          //
+          // rotVecNew[4]=shrink[1];//x2
+          // rotVecNew[5]=shrink[4];//y2
+          // rotVecNew[6]=myZ[1];//z2
+          //
+          // rotVecNew[8]=shrink[2];//x3
+          // rotVecNew[9]=shrink[5];//y3
+          // rotVecNew[10]=myZ[2];//z3
 
-          rotVecNew[4]=shrink[1];//x2
-          rotVecNew[5]=shrink[4];//y2
-          rotVecNew[6]=myZ[1];//z2
+          rotMat[0][0]=shrink[0];//x1
+          rotMat[1][0]=shrink[3];//y1
+          rotMat[2][0]=myZ[0];//z1
 
-          rotVecNew[8]=shrink[2];//x3
-          rotVecNew[9]=shrink[5];//y3
-          rotVecNew[10]=myZ[2];//z3
+          rotMat[0][1]=shrink[1];//x2
+          rotMat[1][1]=shrink[4];//y2
+          rotMat[2][1]=myZ[1];//z2
 
-          memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
+          rotMat[0][2]=shrink[2];//x3
+          rotMat[1][2]=shrink[5];//y3
+          rotMat[2][2]=myZ[2];//z3
+
+
+          // memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
           M = M * rotMat;
           M = glm::scale(M, glm::vec3(shrink[6],shrink[6],shrink[6]) );//Scale
 
@@ -542,6 +584,9 @@ void downhill(float* fw,
           w[(j*N_DIMENSIONS)+5]=shrink[5];
 
           w[(j*N_DIMENSIONS)+6]=shrink[6];
+
+          w[(j*N_DIMENSIONS)+7]=shrink[7];
+          w[(j*N_DIMENSIONS)+8]=shrink[8];
           fw[j]=distance_shrink;
           // if(distance_shrink<fw[N_DIMENSIONS])
           // {
@@ -557,7 +602,7 @@ void downhill(float* fw,
   }//endfor
 
   cout << " fw[0]="<<fw[0] << " fw[1]="<<fw[1] << " fw[2]="<<fw[2] << " fw[3]="<<fw[3] << " fw[4]="<<fw[4] << " fw[5]="<<fw[5] << " fw[6]="<<fw[6] << " fw[7]="<<fw[7] << endl;
-  cout << "fw[0]="<<fw[0]<<" w[0]="<< w[0]<< " w[1]="<< w[1]<< " w[2]="<< w[2]<< " w[3]="<< w[3]<< " w[4]="<< w[4]<< " w[5]="<< w[5]<< " w[6]="<< w[6] << endl;
+  cout << "fw[0]="<<fw[0]<<" w[0]="<< w[0]<< " w[1]="<< w[1]<< " w[2]="<< w[2]<< " w[3]="<< w[3]<< " w[4]="<< w[4]<< " w[5]="<< w[5]<< " w[6]="<< w[6]<< " w[7]="<< w[7]<< " w[8]="<< w[8] << endl;
 
   //Bind FrameBuffer
   glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
@@ -571,23 +616,35 @@ void downhill(float* fw,
 
   //Transformations (Translate*Rotate*Scale)
   M = glm::mat4(1);//Init
-
+  M = glm::translate(M, glm::vec3(w[7],w[8],0.0f));//Translate
   glm::vec3 myZ=cross(glm::vec3(w[0],w[1],w[2]),glm::vec3(w[3],w[4],w[5]) );
-  // cout << "{" << myZ[0] << "," << myZ[1] << "," << myZ[2] << "} " << endl << endl;
+  cout << "{" << myZ[0] << "," << myZ[1] << "," << myZ[2] << "} " << endl << endl;
 
-  rotVecNew[0]=w[0];//x1
-  rotVecNew[1]=w[3];//y1
-  rotVecNew[2]=myZ[0];//z1
+  // rotVecNew[0]=w[0];//x1
+  // rotVecNew[1]=w[3];//y1
+  // rotVecNew[2]=myZ[0];//z1
+  //
+  // rotVecNew[4]=w[1];//x2
+  // rotVecNew[5]=w[4];//y2
+  // rotVecNew[6]=myZ[1];//z2
+  //
+  // rotVecNew[8]=w[2];//x3
+  // rotVecNew[9]=w[5];//y3
+  // rotVecNew[10]=myZ[2];//z3
 
-  rotVecNew[4]=w[1];//x2
-  rotVecNew[5]=w[4];//y2
-  rotVecNew[6]=myZ[1];//z2
+  rotMat[0][0]=w[0];//x1
+  rotMat[1][0]=w[3];//y1
+  rotMat[2][0]=myZ[0];//z1
 
-  rotVecNew[8]=w[2];//x3
-  rotVecNew[9]=w[5];//y3
-  rotVecNew[10]=myZ[2];//z3
+  rotMat[0][1]=w[1];//x2
+  rotMat[1][1]=w[4];//y2
+  rotMat[2][1]=myZ[1];//z2
 
-  memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
+  rotMat[0][2]=w[2];//x3
+  rotMat[1][2]=w[5];//y3
+  rotMat[2][2]=myZ[2];//z3
+
+  // memcpy( glm::value_ptr( rotMat ), rotVecNew, sizeof( rotVecNew ) );
   M = M * rotMat;
   M = glm::scale(M, glm::vec3(w[6],w[6],w[6]) );//Scale
 
@@ -599,6 +656,23 @@ void downhill(float* fw,
   distance=Loss(imageGray, frameImage, favg,cff);
 
   cout << "\nGenerating Image" << endl;
+  cout
+  << "initialRot[0][0]=" << w[0] << ";\n"
+  << "initialRot[0][1]=" << w[3] << ";\n"
+  << "initialRot[0][2]=" << myZ[0] << ";\n"
+
+  << "initialRot[1][0]=" << w[1] << ";\n"
+  << "initialRot[1][1]=" << w[4] << ";\n"
+  << "initialRot[1][2]=" << myZ[1] << ";\n"
+
+  << "initialRot[2][0]=" << w[2] << ";\n"
+  << "initialRot[2][1]=" << w[5] << ";\n"
+  << "initialRot[2][2]=" << myZ[2] << ";\n"
+
+
+  << "firstscale="   << w[6]<< ";\n"
+  << "firstx=" << w[7]<< ";\n"
+  << "firsty=" << w[8]<< ";\n\n";
 
   /* unbind frameBuffer */
   glBindFramebuffer(GL_FRAMEBUFFER, 0);

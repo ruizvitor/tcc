@@ -5,6 +5,33 @@
 #include "SOIL.h"
 #include <string.h>
 
+// dilate()
+// {
+//
+// }
+
+void toGray(cv::Mat &image, cv::Mat &imgray)
+{
+  uint8_t *img = image.data;
+  uint8_t *gray = imgray.data;
+  unsigned int n=image.rows;
+  unsigned int m=image.cols;
+  unsigned long int avg=0;
+  //Mean
+  for(unsigned i=0;i<n;i++)
+  {
+    for(unsigned j=0;j<m;j++)
+    {
+      avg=0;
+      for(unsigned k=0;k<3;k++)
+      {
+        avg+=img[(i*m*3+j*3)+k];
+      }
+      gray[(i*m+j)]=avg/3;
+    }
+  }
+}
+
 template <typename T1, typename T2, typename T3, typename T4>
 // void MapTex( Model &model,
 //             std::vector< unsigned char > &frameImage,
@@ -25,27 +52,19 @@ void MapTex( T1 &model,
   glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
   glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
   // std::vector< unsigned char > buf( w * h * 3,0 );
-  std::vector< unsigned char > buf( w * h * 3,0);
+  // cv::Mat buf(h,w,CV_8UC3,0);
+  // cv::Mat buf = cv::Mat::zeros(h,w, CV_8UC3);
+  cv::Mat buf = cv::Mat::zeros(h,w, CV_8UC4);
+  uint8_t *bufTemp = buf.data;
   // glGetTexImage(GL_TEXTURE_2D,0,GL_RGB,GL_UNSIGNED_BYTE,&buf[0]);
   glBindTexture(GL_TEXTURE_2D, 0);
 
   std::cout << "w= " << w << "h= " << h << std::endl;
 
-  // for(unsigned int i=0;i<( n * m * 2 );i++)
-  // {
-  //   if((int)newUV[i]!=0.0)
-  //     std::cout << (int)newUV[i] << " ";
-  // }
-
 
   int u=0;
   int v=0;
-  //
-  // std::cout << " u=" << u << " v=" << v;
-  // float tempu;
-  // float tempv;
   int address=0;
-  // int texAddress=0;
 
 
   //Fix Opencv BGR to RGB
@@ -57,152 +76,51 @@ void MapTex( T1 &model,
       u=newUV[address]*h;
       v=newUV[address+1]*w;
 
-      buf[ 3*((u*w)+v) ]= frameImage[address+2];//c
-      buf[ 3*((u*w)+v)+1 ]= frameImage[address+1];
-      buf[ 3*((u*w)+v)+2 ]= frameImage[address];
+      //RGB
+      // buf[ 3*((u*w)+v) ]= frameImage[address+2];//c
+      // buf[ 3*((u*w)+v)+1 ]= frameImage[address+1];
+      // buf[ 3*((u*w)+v)+2 ]= frameImage[address];
 
-      // if(u!=0)
-      // {
-      //   // buf[ 3*(((u-1)*w)+v) ]= frameImage[address+2] ;//n
-      //   // buf[ 3*(((u-1)*w)+v)+1 ]= frameImage[address+1] ;
-      //   // buf[ 3*(((u-1)*w)+v)+2 ]= frameImage[address];
-      //
-      //   // buf[ 3*(((u-1)*w)+v) ]= max( buf[ 3*(((u-1)*w)+v) ],(unsigned char)(0.5*frameImage[address+2]) ) ;//n
-      //   // buf[ 3*(((u-1)*w)+v)+1 ]= max( buf[ 3*(((u-1)*w)+v)+1 ],(unsigned char)(0.5*frameImage[address+1]) ) ;
-      //   // buf[ 3*(((u-1)*w)+v)+2 ]= max( buf[ 3*(((u-1)*w)+v)+2 ],(unsigned char)(0.5*frameImage[address]) ) ;
-      //
-      //
-      //   if(v!=w)
-      //   {
-      //     buf[ 3*(((u-1)*w)+v+1) ]= max( buf[ 3*(((u-1)*w)+v+1) ],(unsigned char)(0.25*frameImage[address+2]) ) ;//n
-      //     buf[ 3*(((u-1)*w)+v+1)+1 ]= max( buf[ 3*(((u-1)*w)+v+1)+1 ],(unsigned char)(0.25*frameImage[address+1]) ) ;
-      //     buf[ 3*(((u-1)*w)+v+1)+2 ]= max( buf[ 3*(((u-1)*w)+v+1)+2 ],(unsigned char)(0.25*frameImage[address]) ) ;
-      //
-      //     // buf[ 3*(((u-1)*w)+v+1) ]=frameImage[address+2];//ne
-      //     // buf[ 3*(((u-1)*w)+v+1)+1 ]=frameImage[address+1];
-      //     // buf[ 3*(((u-1)*w)+v+1)+2 ]=frameImage[address];
-      //   }
-      //   else if(v!=0)
-      //   {
-      //     buf[ 3*(((u-1)*w)+v-1) ]= max( buf[ 3*(((u-1)*w)+v-1) ],(unsigned char)(0.25*frameImage[address+2]) ) ;//n
-      //     buf[ 3*(((u-1)*w)+v-1)+1 ]= max( buf[ 3*(((u-1)*w)+v-1)+1 ],(unsigned char)(0.25*frameImage[address+1]) ) ;
-      //     buf[ 3*(((u-1)*w)+v-1)+2 ]= max( buf[ 3*(((u-1)*w)+v-1)+2 ],(unsigned char)(0.25*frameImage[address]) ) ;
-      //     // buf[ 3*(((u-1)*w)+v-1) ]=frameImage[address+2];//nw
-      //     // buf[ 3*(((u-1)*w)+v-1)+1 ]=frameImage[address+1];
-      //     // buf[ 3*(((u-1)*w)+v-1)+2 ]=frameImage[address];
-      //   }
-      // }
-      //
-      // if(u!=h)
-      // {
-      //   buf[ 3*(((u+1)*w)+v) ]= max( buf[ 3*(((u+1)*w)+v) ],(unsigned char)(0.5*frameImage[address+2]) ) ;//n
-      //   buf[ 3*(((u+1)*w)+v)+1 ]= max( buf[ 3*(((u+1)*w)+v)+1 ],(unsigned char)(0.5*frameImage[address+1]) ) ;
-      //   buf[ 3*(((u+1)*w)+v)+2 ]= max( buf[ 3*(((u+1)*w)+v)+2 ],(unsigned char)(0.5*frameImage[address]) ) ;
-      //   // buf[ 3*(((u+1)*w)+v) ]=frameImage[address+2];//s
-      //   // buf[ 3*(((u+1)*w)+v)+1 ]=frameImage[address+1];
-      //   // buf[ 3*(((u+1)*w)+v)+2 ]=frameImage[address];
-      //
-      //   if(v!=w)
-      //   {
-      //     buf[ 3*(((u+1)*w)+v+1) ]= max( buf[ 3*(((u+1)*w)+v+1) ],(unsigned char)(0.25*frameImage[address+2]) ) ;//n
-      //     buf[ 3*(((u+1)*w)+v+1)+1 ]= max( buf[ 3*(((u+1)*w)+v+1)+1 ],(unsigned char)(0.25*frameImage[address+1]) ) ;
-      //     buf[ 3*(((u+1)*w)+v+1)+2 ]= max( buf[ 3*(((u+1)*w)+v+1)+2 ],(unsigned char)(0.25*frameImage[address]) ) ;
-      //     // buf[ 3*(((u+1)*w)+v+1) ]=frameImage[address+2];//se
-      //     // buf[ 3*(((u+1)*w)+v+1)+1 ]=frameImage[address+1];
-      //     // buf[ 3*(((u+1)*w)+v+1)+2 ]=frameImage[address];
-      //   }
-      //   else if(v!=0)
-      //   {
-      //     buf[ 3*(((u+1)*w)+v-1) ]= max( buf[ 3*(((u+1)*w)+v-1) ],(unsigned char)(0.25*frameImage[address+2]) ) ;//n
-      //     buf[ 3*(((u+1)*w)+v-1)+1 ]= max( buf[ 3*(((u+1)*w)+v-1)+1 ],(unsigned char)(0.25*frameImage[address+1]) ) ;
-      //     buf[ 3*(((u+1)*w)+v-1)+2 ]= max( buf[ 3*(((u+1)*w)+v-1)+2 ],(unsigned char)(0.25*frameImage[address]) ) ;
-      //     // buf[ 3*(((u+1)*w)+v-1) ]=frameImage[address+2];//sw
-      //     // buf[ 3*(((u+1)*w)+v-1)+1 ]=frameImage[address+1];
-      //     // buf[ 3*(((u+1)*w)+v-1)+2 ]=frameImage[address];
-      //   }
-      // }
-      //
-      // if(v!=w)
-      // {
-      //   buf[ 3*(((u)*w)+v+1) ]= max( buf[ 3*(((u)*w)+v+1) ],(unsigned char)(0.5*frameImage[address+2]) ) ;//n
-      //   buf[ 3*(((u)*w)+v+1)+1 ]= max( buf[ 3*(((u)*w)+v+1)+1 ],(unsigned char)(0.5*frameImage[address+1]) ) ;
-      //   buf[ 3*(((u)*w)+v+1)+2 ]= max( buf[ 3*(((u)*w)+v+1)+2 ],(unsigned char)(0.5*frameImage[address]) ) ;
-      //
-      //   // buf[ 3*((u*w)+v+1) ]=frameImage[address+2];//e
-      //   // buf[ 3*((u*w)+v+1)+1 ]=frameImage[address+1];
-      //   // buf[ 3*((u*w)+v+1)+2 ]=frameImage[address];
-      // }
-      // else if(v!=0)
-      // {
-      //   buf[ 3*(((u)*w)+v-1) ]= max( buf[ 3*(((u)*w)+v-1) ],(unsigned char)(0.5*frameImage[address+2]) ) ;//n
-      //   buf[ 3*(((u)*w)+v-1)+1 ]= max( buf[ 3*(((u)*w)+v-1)+1 ],(unsigned char)(0.5*frameImage[address+1]) ) ;
-      //   buf[ 3*(((u)*w)+v-1)+2 ]= max( buf[ 3*(((u)*w)+v-1)+2 ],(unsigned char)(0.5*frameImage[address]) ) ;
-      //   // buf[ 3*((u*w)+v-1) ]=frameImage[address+2];//w
-      //   // buf[ 3*((u*w)+v-1)+1 ]=frameImage[address+1];
-      //   // buf[ 3*((u*w)+v-1)+2 ]=frameImage[address];
-      // }
+      //OPENCV USE BGRA
+      bufTemp[ 4*((u*w)+v) ]= frameImage[address];//center
+      bufTemp[ 4*((u*w)+v)+1 ]= frameImage[address+1];
+      bufTemp[ 4*((u*w)+v)+2 ]= frameImage[address+2];
+      bufTemp[ 4*((u*w)+v)+3 ]= 255;
+
+      //OPENCV USE BGR
+      // bufTemp[ 3*((u*w)+v) ]= frameImage[address];
+      // bufTemp[ 3*((u*w)+v)+1 ]= frameImage[address+1];
+      // bufTemp[ 3*((u*w)+v)+2 ]= frameImage[address+2];
+
     }
   }
 
-  // //Fix Opencv BGR to RGB
-  // for(unsigned int i=0;i<n;i++)
-  // {
-  //   for(unsigned int j=0;j<m;j++)
-  //   {
-  //     address=3*((i*m)+j);
-  //     u=newUV[address]*h;
-  //     v=newUV[address+1]*w;
-  //
-  //     buf[ 3*((u*w)+v) ]= frameImage[address+2];//c
-  //     buf[ 3*((u*w)+v)+1 ]= frameImage[address+1];
-  //     buf[ 3*((u*w)+v)+2 ]= frameImage[address];
-  //     if(u!=0)
-  //     {
-  //       buf[ 3*(((u-1)*w)+v) ]= frameImage[address+2] ;//n
-  //       buf[ 3*(((u-1)*w)+v)+1 ]= frameImage[address+1] ;
-  //       buf[ 3*(((u-1)*w)+v)+2 ]= frameImage[address];
-  //     }
-  //
-  //     if(u!=h)
-  //     {
-  //       buf[ 3*(((u+1)*w)+v) ]=frameImage[address+2];//s
-  //       buf[ 3*(((u+1)*w)+v)+1 ]=frameImage[address+1];
-  //       buf[ 3*(((u+1)*w)+v)+2 ]=frameImage[address];
-  //
-  //       if(v!=w)
-  //       {
-  //         buf[ 3*(((u+1)*w)+v+1) ]=frameImage[address+2];//se
-  //         buf[ 3*(((u+1)*w)+v+1)+1 ]=frameImage[address+1];
-  //         buf[ 3*(((u+1)*w)+v+1)+2 ]=frameImage[address];
-  //       }
-  //     }
-  //
-  //     if(v!=w)
-  //     {
-  //       buf[ 3*((u*w)+v+1) ]=frameImage[address+2];//e
-  //       buf[ 3*((u*w)+v+1)+1 ]=frameImage[address+1];
-  //       buf[ 3*((u*w)+v+1)+2 ]=frameImage[address];
-  //     }
-  //   }
-  // }
-
   std::cout << "gonna save" << std::endl;
-  std::vector< unsigned char > image( w * h * 3 );
-  flipImg(buf,image,w,h);//OPENGL INVERT Y
 
-  const char* filename = "out/newSapo.bmp";
-  // char const *pchar = model.textures_loaded[0].path.C_Str();
+  cv::Mat image;
+  image.Mat::create(h,w, CV_8UC4);
+  // cv::Mat image = cv::Mat::zeros(h,w, CV_8UC4);
+  uint8_t *imageTemp = image.data;
+  flipImgAlpha(bufTemp,imageTemp,w,h);//OPENGL INVERT Y
+  imwrite( "out/newSapo.png", image );
+  // imwrite( "out/newSapo.png", buf );
 
-  int err = SOIL_save_image
-  (
-    filename,
-    SOIL_SAVE_TYPE_BMP,
-    w, h, 3,
-    &image[0]
-  );
-  if(!err){
-    std::cout << "Error! Unable to create "<< filename << std::endl;
-  }
+  // std::vector< unsigned char > image( w * h * 3 );
+  // flipImg(buf,image,w,h);//OPENGL INVERT Y
+  //
+  // const char* filename = "out/newSapo.bmp";
+  // // char const *pchar = model.textures_loaded[0].path.C_Str();
+  //
+  // int err = SOIL_save_image
+  // (
+  //   filename,
+  //   SOIL_SAVE_TYPE_BMP,
+  //   w, h, 3,
+  //   &image[0]
+  // );
+  // if(!err){
+  //   std::cout << "Error! Unable to create "<< filename << std::endl;
+  // }
   //imwrite
 }
 
