@@ -133,7 +133,7 @@ int main(int argc,char** argv)
         cout << "value of p is"<< optarg <<endl ;
         imageGray = imread(optarg, CV_LOAD_IMAGE_GRAYSCALE);
         imageColor = imread(optarg, CV_LOAD_IMAGE_COLOR);
-        toGray(imageColor,imageGray);//use average desaturate istead of lightness
+        // toGray(imageColor,imageGray);//use average desaturate istead of lightness
         // imwrite("out/teste.jpg",imageGray);
         imgProj = imageColor.data;
         favg=Mean(imageGray);
@@ -184,6 +184,7 @@ int main(int argc,char** argv)
   // glm::vec4 lightPos=glm::vec4(-10.0,10.0,100.0,1.0);
 
   //Create FrameBuffer
+  std::cout << "teste" << std::endl;
   GLuint myFrameBuffer;
   GenerateFBO(&myFrameBuffer, WINDOW_WIDTH, WINDOW_HEIGHT);
 

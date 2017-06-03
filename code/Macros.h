@@ -1,0 +1,8 @@
+#define WINDOW_HEIGHT 1024
+#define WINDOW_WIDTH 1024
+#define MAX_ITER 300
+#define MIN_ERROR 0.01
+#define MIN_VAR 0.000001
+#define N_DIMENSIONS 9
+#define N_DIMENSIONSSUM 10
+#define MOVEFACTOR 2.5f
