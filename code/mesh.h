@@ -44,6 +44,10 @@ public:
   vector<GLuint> indices;
   vector<Texture> textures;
   GLuint VAO;
+  // float xmin;
+  // float xmax;
+  // float ymin;
+  // float ymax;
 
   /*  Functions  */
   // Constructor

@@ -3,3 +3,5 @@ code/shaders/*.bin
 code/runme
 material/
 profeta/
+Poser/src/*.o
+Poser/bin

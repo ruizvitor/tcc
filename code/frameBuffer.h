@@ -85,7 +85,11 @@ void MapTex( T1 &model,
       bufTemp[ 4*((u*w)+v) ]= frameImage[address];//center
       bufTemp[ 4*((u*w)+v)+1 ]= frameImage[address+1];
       bufTemp[ 4*((u*w)+v)+2 ]= frameImage[address+2];
-      bufTemp[ 4*((u*w)+v)+3 ]= 255;
+      if((frameImage[address]==0)&&(frameImage[address+1]==0)&&(frameImage[address+2]==0) ){
+        bufTemp[ 4*((u*w)+v)+3 ]= 0;
+      }
+      else
+        bufTemp[ 4*((u*w)+v)+3 ]= 255;
 
       //OPENCV USE BGR
       // bufTemp[ 3*((u*w)+v) ]= frameImage[address];
@@ -102,7 +106,7 @@ void MapTex( T1 &model,
   // cv::Mat image = cv::Mat::zeros(h,w, CV_8UC4);
   uint8_t *imageTemp = image.data;
   flipImgAlpha(bufTemp,imageTemp,w,h);//OPENGL INVERT Y
-  imwrite( "out/newSapo.png", image );
+  imwrite( "out/newUV.png", image );
   // imwrite( "out/newSapo.png", buf );
 
   // std::vector< unsigned char > image( w * h * 3 );
@@ -148,6 +152,8 @@ std::vector< unsigned char > GetFrame(unsigned int w,unsigned int h)
   return buf;
 }
 
+
+
 void SaveFrame(unsigned int w,unsigned int h,unsigned int i)
 {
   glReadBuffer(GL_COLOR_ATTACHMENT0);//Render Result
@@ -168,6 +174,58 @@ void SaveFrame(unsigned int w,unsigned int h,unsigned int i)
   if(!err){
     std::cout << "Error! Unable to create "<< s << std::endl;
   }
+}
+
+void SaveFrameN(std::vector< unsigned char >& buf,unsigned int w,unsigned int h,unsigned int i,Mat& imageColor  )
+{
+  Mat src = Mat(h, w, CV_8UC3);
+  src.data=buf.data();
+  Mat src_gray;
+  Mat dst;
+
+
+  int kernel_size = 3;
+  int scale = 1;
+  int delta = 0;
+  int ddepth = CV_16S;
+  cvtColor( src, src_gray, CV_BGR2GRAY );
+  Laplacian( src_gray, dst, ddepth, kernel_size, scale, delta, BORDER_DEFAULT );
+  convertScaleAbs( dst, dst );
+  cvtColor(dst, dst, cv::COLOR_GRAY2BGR);
+
+  // float alpha = 0.5;
+  // float beta = ( 1.0 - alpha );
+  // addWeighted( dst, alpha, imageColor, beta, 0.0, dst);
+  add( dst, imageColor, dst);
+
+  std::string s = "out/"+std::to_string(i)+".png";
+  imwrite( s,dst );
+
+  // char const *pchar = s.c_str();
+  //
+  // int err = SOIL_save_image
+  // (
+  //   pchar,
+  //   SOIL_SAVE_TYPE_BMP,
+  //   w, h, 3,
+  //   &buf[0]
+  // );
+  // if(!err){
+  //   std::cout << "Error! Unable to create "<< s << std::endl;
+  // }
+
+  // Mat image=Mat(w,h,CV_8UC3);
+  // image.data=&buf[0];
+  //
+  // for (int i = 0; i < h; i++) {
+  //   for (int j = 0; j < w; j++) {
+  //     image.data[ 3*((i*w)+j) ]= buf[ 3*((i*w)+j) ];//center
+  //     image.data[ 3*((i*w)+j)+1 ]= buf[ 3*((i*w)+j)+1 ];
+  //     image.data[ 3*((i*w)+j)+2 ]= buf[ 3*((i*w)+j)+2 ];
+  //   }
+  // }
+  //
+  // imwrite(path,image);
 }
 
 void CHECK_FRAMEBUFFER_STATUS()

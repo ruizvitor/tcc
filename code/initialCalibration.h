@@ -29,6 +29,52 @@ void getInitPose(glm::mat4& initialRot,const char* optarg)
   }
 }
 
+void getBetterInitPose(float &near,  glm::mat4& T,glm::mat4& R, glm::mat4& S,const char* optarg)
+{
+  FILE* fpose=fopen(optarg, "r" );
+  if (fpose!=NULL)
+  {
+    fscanf(fpose,"%f",&near);
+    cout<<near<<endl;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        fscanf(fpose,"%f",&T[i][j]);
+        cout<<T[i][j]<<" ";
+      }
+      cout<<endl;
+    }
+
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        fscanf(fpose,"%f",&R[i][j]);
+        cout<<R[i][j]<<" ";
+      }
+      cout<<endl;
+    }
+
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        fscanf(fpose,"%f",&S[i][j]);
+        cout<<S[i][j]<<" ";
+      }
+      cout<<endl;
+    }
+    std::cout << "sucess in reading pose file" << std::endl;
+    fclose (fpose);
+  }
+  else
+  {
+    std::cout << "fail to open file with read privilage" << std::endl;
+    abort();
+  }
+}
+
 void getBoundingBox(Mat& image, point& diff)
 {
   uint8_t *img = image.data;
@@ -63,6 +109,8 @@ void getBoundingBox(Mat& image, point& diff)
 
   diff.x=xmax;
   diff.y=ymax;
+  // diff.x=0.99*xmax;
+  // diff.y=0.99*ymax;
   diff.centerx=xmin+(xmax-xmin)/2;
   diff.centery=ymin+(ymax-ymin)/2;
 }

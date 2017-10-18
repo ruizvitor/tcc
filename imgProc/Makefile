@@ -9,5 +9,9 @@ LFLAGS = -lopencv_core -lopencv_highgui -lopencv_imgproc
 runme: $(TARGET).cpp
 	$(CC) -Wall -O3 -g $(TARGET).cpp  $(CFLAGS) $(LFLAGS) $(LIBS)  -o runme
 
+dis: kernel.cpp
+	$(CC) -Wall -O3 -g kernel.cpp  $(CFLAGS) $(LFLAGS) $(LIBS)  -o distance
+
 clean:
 	rm ./runme
+	rm ./distance

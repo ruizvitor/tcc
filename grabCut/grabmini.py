@@ -24,6 +24,7 @@ Key '3' - To select areas of probable foreground
 Key 'n' - To update the segmentation
 Key 'r' - To reset the setup
 Key 's' - To save the results
+Key 'x' - toggle rightclick to leftclick
 Key 'Esc' - EXIT
 ===============================================================================
 '''
@@ -47,6 +48,7 @@ DRAW_PR_FG = {'color' : GREEN, 'val' : 3}
 DRAW_PR_BG = {'color' : RED, 'val' : 2}
 
 # setting up flags
+toggle = 1
 rect = (0,0,1,1)
 drawing = False         # flag for drawing curves
 rectangle = False       # flag for drawing rect
@@ -56,51 +58,52 @@ value = DRAW_FG         # drawing initialized to FG
 thickness = 3           # brush thickness
 
 def onmouse(event,x,y,flags,param):
-    global img,img2,drawing,value,mask,rectangle,rect,rect_or_mask,ix,iy,rect_over
+    global img,img2,drawing,value,mask,rectangle,rect,rect_or_mask,ix,iy,rect_over,toggle
+    if(toggle):
+        # Draw Rectangle
+        if event == cv2.EVENT_LBUTTONDOWN:
+            rectangle = True
+            ix,iy = x,y
 
-    # Draw Rectangle
-    if event == cv2.EVENT_RBUTTONDOWN:
-        rectangle = True
-        ix,iy = x,y
+        elif event == cv2.EVENT_MOUSEMOVE:
+            if rectangle == True:
+                img = img2.copy()
+                cv2.rectangle(img,(ix,iy),(x,y),BLUE,2)
+                rect = (min(ix,x),min(iy,y),abs(ix-x),abs(iy-y))
+                rect_or_mask = 0
 
-    elif event == cv2.EVENT_MOUSEMOVE:
-        if rectangle == True:
-            img = img2.copy()
+        elif event == cv2.EVENT_LBUTTONUP:
+            rectangle = False
+            rect_over = True
             cv2.rectangle(img,(ix,iy),(x,y),BLUE,2)
             rect = (min(ix,x),min(iy,y),abs(ix-x),abs(iy-y))
             rect_or_mask = 0
-
-    elif event == cv2.EVENT_RBUTTONUP:
-        rectangle = False
-        rect_over = True
-        cv2.rectangle(img,(ix,iy),(x,y),BLUE,2)
-        rect = (min(ix,x),min(iy,y),abs(ix-x),abs(iy-y))
-        rect_or_mask = 0
-        print(" Now press the key 'n' a few times until no further change \n")
+            print(" Now press the key 'n' a few times until no further change \n")
 
     # draw touchup curves
+    else:
+        if event == cv2.EVENT_LBUTTONDOWN:
+            if rect_over == False:
+                print("first draw rectangle \n")
+            else:
+                drawing = True
+                cv2.circle(img,(x,y),thickness,value['color'],-1)
+                cv2.circle(mask,(x,y),thickness,value['val'],-1)
 
-    if event == cv2.EVENT_LBUTTONDOWN:
-        if rect_over == False:
-            print("first draw rectangle \n")
-        else:
-            drawing = True
-            cv2.circle(img,(x,y),thickness,value['color'],-1)
-            cv2.circle(mask,(x,y),thickness,value['val'],-1)
+        elif event == cv2.EVENT_MOUSEMOVE:
+            if drawing == True:
+                cv2.circle(img,(x,y),thickness,value['color'],-1)
+                cv2.circle(mask,(x,y),thickness,value['val'],-1)
 
-    elif event == cv2.EVENT_MOUSEMOVE:
-        if drawing == True:
-            cv2.circle(img,(x,y),thickness,value['color'],-1)
-            cv2.circle(mask,(x,y),thickness,value['val'],-1)
-
-    elif event == cv2.EVENT_LBUTTONUP:
-        if drawing == True:
-            drawing = False
-            cv2.circle(img,(x,y),thickness,value['color'],-1)
-            cv2.circle(mask,(x,y),thickness,value['val'],-1)
+        elif event == cv2.EVENT_LBUTTONUP:
+            if drawing == True:
+                drawing = False
+                cv2.circle(img,(x,y),thickness,value['color'],-1)
+                cv2.circle(mask,(x,y),thickness,value['val'],-1)
 
 if __name__ == '__main__':
 
+    global toggle
     # print documentation
     print(__doc__)
 
@@ -179,6 +182,7 @@ if __name__ == '__main__':
             # else:
             #     cv2.imwrite('grabcut_output.png',output)
             cv2.imwrite('grabcut_output.png',output)
+            cv2.imwrite('mask.png',mask2)
             print(" Result saved as image \n")
         elif k == ord('r'): # reset everything
             print("resetting \n")
@@ -203,6 +207,11 @@ if __name__ == '__main__':
                 bgdmodel = np.zeros((1,65),np.float64)
                 fgdmodel = np.zeros((1,65),np.float64)
                 cv2.grabCut(img2,mask,rect,bgdmodel,fgdmodel,1,cv2.GC_INIT_WITH_MASK)
+        elif k == ord('x'):
+            if(toggle):
+              toggle=0
+            else:
+              toggle=1
 
         mask2 = np.where((mask==1) + (mask==3),255,0).astype('uint8')
         output = cv2.bitwise_and(img2,img2,mask=mask2)

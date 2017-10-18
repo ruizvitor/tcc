@@ -13,4 +13,5 @@ clean:
 	rm ./runme
 
 fo:
-	rm out/*.bmp
+	rm out/111.png
+	rm out/888.png

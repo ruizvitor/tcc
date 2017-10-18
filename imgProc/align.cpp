@@ -26,8 +26,8 @@ int main( int argc, char** argv )
     {
       //yellow
       if(
-      (img[(i*m*3+j*3)+2]!=0)&&
-      (img[(i*m*3+j*3)+1]!=0)&&
+      (img[(i*m*3+j*3)+2]!=0)||
+      (img[(i*m*3+j*3)+1]!=0)||
       (img[(i*m*3+j*3)]!=0) )
       {
         if(j<xmin)
@@ -42,16 +42,24 @@ int main( int argc, char** argv )
     }
   }
 
+  cout << "diffx=" << (xmax-xmin) << " diffy=" << (ymax-ymin) << endl;
   int centerx=xmin+(xmax-xmin)/2;
   int centery=ymin+(ymax-ymin)/2;
-  centerx=m/2-centerx;
-  centery=n/2-centery;
+  cout << "centerx_act="<< centerx << " centery_act=" << centery << endl;
+  cout << "centerx_real="<< m/2 << " centery_real=" << n/2 << endl;
+  if((centerx==m/2)&&(centery==n/2)){
+    return 0;  
+  }
+  centerx=(m/2)-centerx;
+  centery=(n/2)-centery;
 
   Mat warpGround;
   warpGround = (Mat_<float>(2,3) << 1, 0, centerx,
                                     0, 1, centery);
   warpAffine(image, image, warpGround,
-            Size(m,n), INTER_LINEAR);
+            Size(m,n), INTER_LINEAR);  
+  //warpAffine(image, image, warpGround,
+  //          Size(m,n), INTER_LINEAR);
 // warpAffine(image, image, warpGround);
 
   // warpAffine(img,img,translate);
