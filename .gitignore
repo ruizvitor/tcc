@@ -5,3 +5,7 @@ material/
 profeta/
 Poser/src/*.o
 Poser/bin
+grabCut/*.png
+grabCut/*.JPG
+imgProc/runme
+imgProc/test
