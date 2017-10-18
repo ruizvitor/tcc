@@ -24,6 +24,15 @@
 #include "heuristic.hpp"
 #include "lossfunction.hpp"
 
+int face1=0;
+int face2=0;
+int face3=0;
+int face4=0;
+int face5=0;
+int face6=0;
+
+int activatelaplacian=0;
+
 int rotate_x_increase=0;
 int rotate_x_decrease=0;
 int rotate_y_increase=0;
@@ -49,6 +58,38 @@ using namespace cv;
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    if (key == GLFW_KEY_Z && action == GLFW_PRESS)
+    {
+      if(activatelaplacian==0)
+        activatelaplacian=1;
+      else
+        activatelaplacian=0;
+    }
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS)
+    {
+      face1=1;
+    }
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS)
+    {
+      face2=1;
+    }
+    if (key == GLFW_KEY_3 && action == GLFW_PRESS)
+    {
+      face3=1;
+    }
+    if (key == GLFW_KEY_4 && action == GLFW_PRESS)
+    {
+      face4=1;
+    }
+    if (key == GLFW_KEY_5 && action == GLFW_PRESS)
+    {
+      face5=1;
+    }
+    if (key == GLFW_KEY_6 && action == GLFW_PRESS)
+    {
+      face6=1;
+    }
+
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
       glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -199,7 +240,7 @@ int main(int argc,char** argv)
     TheInputImage=imread("/home/dvr13/tg-1/material/testes/front4x.JPG",CV_LOAD_IMAGE_COLOR);
   }
   getBoundingBoxColor((std::vector< unsigned char >&)TheInputImage.data,original,TheInputImage.rows,TheInputImage.cols);
-  // rectangle(TheInputImage,Point(original.xmin,original.ymin),Point(original.x,original.y),255 );
+  rectangle(TheInputImage,Point(original.xmin,original.ymin),Point(original.x,original.y),255 );
 
   // Mat TheInputImage=imread("/home/dvr13/tg-1/material/testes/front24x.JPG",CV_LOAD_IMAGE_COLOR);
   int height=TheInputImage.size().height;
@@ -382,14 +423,16 @@ int main(int argc,char** argv)
 
   Mat warped=flip_image.clone();
   Mat translation_matrix;
-  translation_matrix = (Mat_<float>(2,3) << 1, 0, rect.centerx-original.centerx,
-                                            0, 1, rect.centery-original.centery);
+  int originalX=rect.centerx-original.centerx;
+  int originalY=rect.centery-original.centery;
+  translation_matrix = (Mat_<float>(2,3) << 1, 0, originalX,
+                                            0, 1, originalY);
   // translation_matrix = (Mat_<float>(2,3) << 1, 0, 0,
   //                                           0, 1, rect.centery-original.centery);
   warpAffine(flip_image,warped, translation_matrix,
             Size(width,height));
   cout<< "-------warp------"<<endl;
-  cout<< rect.centerx-original.centerx<< " " << -(rect.centery-original.centery)<<endl;
+  cout<< originalX << " " << -(originalY)<<endl;
 
   // rectangle(flip_image,Point(rect.xmin,rect.ymin),Point(rect.x,rect.y),255 );
 
@@ -476,14 +519,14 @@ int main(int argc,char** argv)
       yFACTOR-=1.0;
     }
 
-    if(z_increase)
-    {
-      zFACTOR-=0.1;
-    }
-    if(z_decrease)
-    {
-      zFACTOR+=0.1;
-    }
+    // if(z_increase)
+    // {
+    //   zFACTOR-=0.1;
+    // }
+    // if(z_decrease)
+    // {
+    //   zFACTOR+=0.1;
+    // }
 
     if(rotate_x_increase)
     {
@@ -501,6 +544,94 @@ int main(int argc,char** argv)
     if(rotate_y_decrease)
     {
       yRotate-=0.1;
+    }
+
+    if(face1){
+      face1=0;
+      initialRot[0][0]=1.0f;
+      initialRot[0][1]=0.0f;
+      initialRot[0][2]=0.0f;
+      initialRot[0][3]=0.0f;
+
+      initialRot[1][0]=0.0f;
+      initialRot[1][1]=-1.0f;
+      initialRot[1][2]=0.0f;
+      initialRot[1][3]=0.0f;
+
+      initialRot[2][0]=0.0f;
+      initialRot[2][1]=0.0f;
+      initialRot[2][2]=1.0f;
+      initialRot[2][3]=0.0f;
+
+      initialRot[3][0]=0.0f;
+      initialRot[3][1]=0.0f;
+      initialRot[3][2]=0.0f;
+      initialRot[3][3]=1.0f;
+
+      point rect;
+      boxfocal(original,
+              rect,
+              myFrameBuffer.FBO,
+              simpleShader,
+              ourModel,
+              M,
+              V,
+              P,
+              T,
+              R,
+              S,
+              width,
+              height,
+              frameImage
+            );
+      ORIGINALSCALEx=S[0][0]*P[0][0];
+      ORIGINALSCALEy=S[1][1]*P[1][1];
+      SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+      SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+    }
+
+    if(face2){
+      face2=0;
+      initialRot[0][0]=-1.0f;
+      initialRot[0][1]=0.0f;
+      initialRot[0][2]=0.0f;
+      initialRot[0][3]=0.0f;
+
+      initialRot[1][0]=0.0f;
+      initialRot[1][1]=-1.0f;
+      initialRot[1][2]=0.0f;
+      initialRot[1][3]=0.0f;
+
+      initialRot[2][0]=0.0f;
+      initialRot[2][1]=0.0f;
+      initialRot[2][2]=-1.0f;
+      initialRot[2][3]=0.0f;
+
+      initialRot[3][0]=0.0f;
+      initialRot[3][1]=0.0f;
+      initialRot[3][2]=0.0f;
+      initialRot[3][3]=1.0f;
+
+      point rect;
+      boxfocal(original,
+              rect,
+              myFrameBuffer.FBO,
+              simpleShader,
+              ourModel,
+              M,
+              V,
+              P,
+              T,
+              R,
+              S,
+              width,
+              height,
+              frameImage
+            );
+      ORIGINALSCALEx=S[0][0]*P[0][0];
+      ORIGINALSCALEy=S[1][1]*P[1][1];
+      SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+      SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
     }
 
     if(reset)
@@ -582,13 +713,13 @@ int main(int argc,char** argv)
         cout<<endl;
       }
       cout<< "-------warp------"<<endl;
-      cout<< rect.centerx-original.centerx+xFACTOR<< " " << -(rect.centery-original.centery+yFACTOR)<<endl;
+      cout<< originalX+xFACTOR << " " << -(originalY+yFACTOR)<<endl;
 
-      favg=Mean(warped);
-      cff=MyCff(warped,favg);
-      temp=GetFrame(width,height);
-      distance=Loss(warped, temp, favg,cff);
-      cout << "distance=" << distance << endl;
+      // favg=Mean(warped);
+      // cff=MyCff(warped,favg);
+      // std::vector< unsigned char > frameImage(clon.begin<unsigned char>(), clon.end<unsigned char>());
+      // distance=Loss(warped, frameImage, favg,cff);
+      // cout << "distance=" << distance << endl;
       // cout<< "-------P------"<<endl;
       // for (int i = 0; i < 4; i++)
       // {
@@ -611,8 +742,8 @@ int main(int argc,char** argv)
 
     }
 
-    translation_matrix = (Mat_<float>(2,3) << 1, 0, rect.centerx-original.centerx+xFACTOR,
-                                              0, 1, rect.centery-original.centery+yFACTOR);
+    translation_matrix = (Mat_<float>(2,3) << 1, 0, originalX+xFACTOR,
+                                              0, 1, originalY+yFACTOR);
     warpAffine(flip_image,warped, translation_matrix,
               Size(width,height));
 
@@ -635,9 +766,15 @@ int main(int argc,char** argv)
     temp=GetFrame(width,height);
 
     getBoundingBoxColor(temp,rect,height,width);
+
     Mat src = Mat(height, width, CV_8UC3);
     src.data=temp.data();
     clon=src.clone();
+
+    if(activatelaplacian==1)
+    {
+      mylaplacian(clon,width,height);
+    }
     rectangle(clon,Point(rect.xmin,rect.ymin),Point(rect.x,rect.y),255 );
 
     /* Swap front and back buffers */

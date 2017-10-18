@@ -29,7 +29,7 @@ void getInitPose(glm::mat4& initialRot,const char* optarg)
   }
 }
 
-void getBetterInitPose(float &near,  glm::mat4& T,glm::mat4& R, glm::mat4& S,const char* optarg)
+void getBetterInitPose(float &near,  glm::mat4& T,glm::mat4& R, glm::mat4& S,int& tx, int& ty,const char* optarg)
 {
   FILE* fpose=fopen(optarg, "r" );
   if (fpose!=NULL)
@@ -45,7 +45,7 @@ void getBetterInitPose(float &near,  glm::mat4& T,glm::mat4& R, glm::mat4& S,con
       }
       cout<<endl;
     }
-
+    cout<<endl;
     for (int i = 0; i < 4; i++)
     {
       for (int j = 0; j < 4; j++)
@@ -55,7 +55,7 @@ void getBetterInitPose(float &near,  glm::mat4& T,glm::mat4& R, glm::mat4& S,con
       }
       cout<<endl;
     }
-
+    cout<<endl;
     for (int i = 0; i < 4; i++)
     {
       for (int j = 0; j < 4; j++)
@@ -65,6 +65,11 @@ void getBetterInitPose(float &near,  glm::mat4& T,glm::mat4& R, glm::mat4& S,con
       }
       cout<<endl;
     }
+    cout<<endl;
+    fscanf(fpose,"%d",&tx);
+    cout<<tx<<" ";
+    fscanf(fpose,"%d",&ty);
+    cout<<ty<<endl;
     std::cout << "sucess in reading pose file" << std::endl;
     fclose (fpose);
   }

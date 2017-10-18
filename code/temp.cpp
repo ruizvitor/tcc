@@ -110,6 +110,8 @@ int main(int argc,char** argv)
   int h=0;
   int height=0;
   int width=0;
+  int tx=0;
+  int ty=0;
   point original;
   // glm::mat4 initialRot;
   Mat mask;
@@ -121,26 +123,8 @@ int main(int argc,char** argv)
       {
         p=1;
         cout << "value of p is "<< optarg <<endl ;
-        imageGray = imread(optarg, CV_LOAD_IMAGE_GRAYSCALE);
-
-        Mat translation_matrix;
-        translation_matrix = (Mat_<float>(2,3) << 1, 0, 26,
-                                                  0, 1, 40);
-        warpAffine(imageGray,imageGray, translation_matrix,
-                  Size(width,height));
-
-        getBoundingBox(imageGray,original);
-        // std::cout << "diffx=" << original.x << " diffy=" << original.y << std::endl;
-        height=imageGray.rows;
-        width=imageGray.cols;
+        // imageGray = imread(optarg, CV_LOAD_IMAGE_GRAYSCALE);
         imageColor = imread(optarg, CV_LOAD_IMAGE_COLOR);
-        warpAffine(imageColor,imageColor, translation_matrix,
-                  Size(width,height));
-        toGray(imageColor,imageGray);//use average desaturate istead of lightness
-        imgProj = imageColor.data;
-        favg=Mean(imageGray);
-        cff=MyCff(imageGray,favg);
-        mask=makeMask(imageGray);
         break;
       }
       case 'm':
@@ -154,45 +138,51 @@ int main(int argc,char** argv)
       {
         f=1;
         cout << "value of f is "<< optarg <<endl ;
-        getBetterInitPose(near,T,R,S,optarg);
+        getBetterInitPose(near,T,R,S,tx,ty,optarg);
         break;
       }
       case 'h':
       {
-        cout<<"-p photopath -m modelpath -f posefilePath -h 0 or 1 for downhillsimplex"<<endl;
+        cout<<"-f posefilePath -p photopath -m modelpath  -h 0 or 1 for downhillsimplex"<<endl;
         h=1;
-        return -1;
         break;
       }
       default:
       {
-        cout<<"-p photopath -m modelpath -f posefilePath -h 0 or 1 for downhillsimplex"<<endl; abort();
+        cout<<"-f posefilePath -p photopath -m modelpath  -h 0 or 1 for downhillsimplex"<<endl; abort();
         break;
       }
     }
   }
 
+  if(f==0)
+  {
+    //Default
+    getBetterInitPose(near,T,R,S,tx,ty,"initial/backNew.txt");
+  }
   if(p==0)
   {
     //Default
     //Images
-    imageGray = imread("../material/testes/back4x.JPG", CV_LOAD_IMAGE_GRAYSCALE);
-    cout<<"Loaded Default gray image"<<endl;
+    // imageGray = imread(optarg, CV_LOAD_IMAGE_GRAYSCALE);
+    cout<<"will load image"<<endl;
     imageColor = imread("../material/testes/back4x.JPG", CV_LOAD_IMAGE_COLOR);
-    cout<<"Loaded Default color image"<<endl;
-    toGray(imageColor,imageGray);//use average desaturate istead of lightness
-    height=imageGray.rows;
-    width=imageGray.cols;
-    getBoundingBox(imageGray,original);
-    cout<<"Calculated Bounding box of gray image"<<endl;
-    imgProj = imageColor.data;
-    favg=Mean(imageGray);
-    cout<<"Calculated Mean of gray image"<<endl;
-    cff=MyCff(imageGray,favg);
-    cout<<"Calculated Cff of gray image"<<endl;
-    mask=makeMask(imageGray);
-    cout<<"Calculated Mask gray image"<<endl;
   }
+  Mat translation_matrix;
+  translation_matrix = (Mat_<float>(2,3) << 1, 0, tx,
+                                            0, 1, ty);
+  height=imageColor.rows;
+  width=imageColor.cols;
+  imageGray = Mat(width,height,CV_8UC1);
+  warpAffine(imageColor,imageColor, translation_matrix,
+            Size(width,height));
+  toGray(imageColor,imageGray);//use average desaturate istead of lightness
+
+  getBoundingBox(imageGray,original);
+  imgProj = imageColor.data;
+  favg=Mean(imageGray);
+  cff=MyCff(imageGray,favg);
+  mask=makeMask(imageGray);
   if(m==0)
   {
     //Default
@@ -200,31 +190,7 @@ int main(int argc,char** argv)
     ourModel.loadModel("../models/testes/MyfrogLSCM45Centered.obj");
     cout<<"Loaded Default model"<<endl;
   }
-  if(f==0)
-  {
-    //Default
-    getBetterInitPose(near,T,R,S,"initial/backNew.txt");
 
-    // initialRot[0][0]=-1.0f;
-    // initialRot[0][1]=0.0f;
-    // initialRot[0][2]=0.0f;
-    // initialRot[0][3]=0.0f;
-    //
-    // initialRot[1][0]=0.0f;
-    // initialRot[1][1]=-1.0f;
-    // initialRot[1][2]=0.0f;
-    // initialRot[1][3]=0.0f;
-    //
-    // initialRot[2][0]=0.0f;
-    // initialRot[2][1]=0.0f;
-    // initialRot[2][2]=-1.0f;
-    // initialRot[2][3]=0.0f;
-    //
-    // initialRot[3][0]=0.0f;
-    // initialRot[3][1]=0.0f;
-    // initialRot[3][2]=0.0f;
-    // initialRot[3][3]=1.0f;
-  }
 
   //Init viewport
   glViewport(0,0,(GLsizei) width, (GLsizei) height);

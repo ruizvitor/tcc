@@ -40,6 +40,8 @@ class FrameBuffer
 
 std::vector< unsigned char > GetFrame(unsigned int w,unsigned int h);
 
+void mylaplacian(Mat& src,unsigned int w,unsigned int h);
+
 void updateCamera(glm::mat4& V);
 void reshape(int w, int h, glm::mat4& P, float near);
 void CHECK_FrameBuffer_STATUS();

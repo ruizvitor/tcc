@@ -182,15 +182,15 @@ void paramsAprox( float* fw,
     signValue*=-1;
     cout<<"-- "<<signValue<<" --"<<endl;
     // min_actual=2.0f;
-    // for (int i = 0; i < ANGLE_ITER; i++)
-    // {
-    //   for (int j = 0; j < ANGLE_ITER; j++)
-    //   {
+    for (int i = 0; i < ANGLE_ITER; i++)
+    {
+      for (int j = 0; j < ANGLE_ITER; j++)
+      {
         for (int z = 0; z < ANGLE_ITER; z++)
         {
 
-          // rotMat = glm::rotate(initialR, glm::radians(signValue*ANGLE_DIFF*i), glm::vec3(1.0f,0.0f,0.0f));//Rotate
-          // rotMat = glm::rotate(rotMat, glm::radians(signValue*ANGLE_DIFF*j), glm::vec3(0.0f,1.0f,0.0f));//Rotate
+          rotMat = glm::rotate(initialR, glm::radians(signValue*ANGLE_DIFF*i), glm::vec3(1.0f,0.0f,0.0f));//Rotate
+          rotMat = glm::rotate(rotMat, glm::radians(signValue*ANGLE_DIFF*j), glm::vec3(0.0f,1.0f,0.0f));//Rotate
           rotMat = glm::rotate(rotMat, glm::radians(signValue*ANGLE_DIFF*z), glm::vec3(0.0f,0.0f,1.0f));//Rotate
 
           M=initialT*rotMat*initialS;
@@ -244,8 +244,8 @@ void paramsAprox( float* fw,
           insertionFancy(fw,distance,tempVec,w,N_DIMENSIONS);
 
         }
-    //   }
-    // }
+      }
+    }
   }
 }
 

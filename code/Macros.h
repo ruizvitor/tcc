@@ -16,5 +16,5 @@
 // #define ANGLE_DIFF 5.0f
 // #define ANGLE_ITER 6
 
-#define ANGLE_DIFF 1.0f
-#define ANGLE_ITER 5
+#define ANGLE_DIFF 15.0f
+#define ANGLE_ITER 3

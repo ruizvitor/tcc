@@ -1,6 +1,7 @@
 code/out/*
 code/shaders/*.bin
 code/runme
+code/*.o
 material/
 profeta/
 Poser/src/*.o

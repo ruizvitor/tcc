@@ -142,6 +142,22 @@ ScreenQuad::~ScreenQuad(void)
   glDeleteBuffers(1, &quadVBO);
 }
 
+void mylaplacian(Mat& src,unsigned int w,unsigned int h)
+{
+  Mat src_gray;
+  Mat dst;
+
+
+  int kernel_size = 3;
+  int scale = 1;
+  int delta = 0;
+  int ddepth = CV_16S;
+  cvtColor( src, src_gray, CV_BGR2GRAY );
+  Laplacian( src_gray, dst, ddepth, kernel_size, scale, delta, BORDER_DEFAULT );
+  convertScaleAbs( dst, dst );
+  cvtColor(dst, src, cv::COLOR_GRAY2BGR);
+}
+
 void render(
         FrameBuffer & myFrameBuffer,
         Shader & texShader,
