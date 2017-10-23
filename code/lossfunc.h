@@ -45,6 +45,20 @@ double MyCff(cv::Mat &image,double Favg)
   return 1/Cff;
 }
 
+// //finding determinant
+// for(i = 0; i < 3; i++)
+//     determinant = determinant + (mat[0][i] * (mat[1][(i+1)%3] * mat[2][(i+2)%3] - mat[1][(i+2)%3] * mat[2][(i+1)%3]));
+//
+// cout<<"\n\ndeterminant: "<<determinant;
+//
+// cout<<"\n\nInverse of matrix is: \n";
+// for(i = 0; i < 3; i++){
+//     for(j = 0; j < 3; j++)
+//         cout<<((mat[(j+1)%3][(i+1)%3] * mat[(j+2)%3][(i+2)%3]) - (mat[(j+1)%3][(i+2)%3] * mat[(j+2)%3][(i+1)%3]))/ determinant<<"\t";
+//
+//     cout<<"\n";
+// }
+
 std::vector< double > matinverse(std::vector< double > &A)
 {
   double determinant =      A[0]*(A[4]*A[8] - A[5]*A[7])
@@ -57,6 +71,14 @@ std::vector< double > matinverse(std::vector< double > &A)
   double invdet = 1/determinant;
   // cout << "invdet: " << invdet << endl;
   std::vector< double > result(9,0);
+
+  // for(i = 0; i < 3; i++)
+  // {
+  //     for(j = 0; j < 3; j++)
+  //     {
+  //       result[(i*3)+j]= invdet * ((A[(j+1)%3][(i+1)%3] * A[(j+2)%3][(i+2)%3]) - (A[(j+1)%3][(i+2)%3] * A[(j+2)%3][(i+1)%3])) ;
+  //     }
+  // }
   result[0] =  (A[4]*A[8]-A[7]*A[5])*invdet;
   result[1] =  (A[2]*A[7]-A[8]*A[1])*invdet;
   result[2] =  (A[1]*A[5]-A[4]*A[2])*invdet;

@@ -2,7 +2,7 @@
 #define _HEUR_H_
 #include "Macros.h"
 
-void insertionFancy(float* fx,float value, float *face, float* x,int n)
+void insertionFancy(float* fx,double value, float *face, float* x,int n)
 {
   int j=-1;
   int nsum=n+1;
@@ -25,7 +25,7 @@ void insertionFancy(float* fx,float value, float *face, float* x,int n)
     else
     {
       if(value==fx[i])
-        break;
+        return;
     }
   }
 
@@ -37,115 +37,6 @@ void insertionFancy(float* fx,float value, float *face, float* x,int n)
       x[(j*n)+k]=face[k];
     }
   }
-}
-
-void boxfocal(  point original,
-              GLuint myFrameBuffer,
-              Shader & simpleShader,
-              Model & ourModel,
-              glm::mat4 M,
-              glm::mat4 V,
-              glm::mat4 P,
-              glm::mat4 initialT,
-              glm::mat4 initialRot,
-              glm::mat4 &initialS,
-              int width,
-              int height,
-              std::vector< unsigned char >& frameImage
-            )
-{
-  glm::mat4 T;
-  glm::mat4 R;
-  glm::mat4 S;
-
-  float initscalex=initialS[0][0];
-  float initscaley=initialS[1][1];
-  float initscalez=initialS[2][2];
-
-  point rect;
-
-  float sx_actual;
-  float sy_actual;
-  float sx_target;
-  float sy_target;
-  float scale_x;
-  float scale_y;
-  // glm::mat4 MVP= P * V * M;
-  // glm::mat4 invMVP=glm::inverse(MVP);
-
-  // glm::vec4 worldcenter=glm::vec4(0.0f,0.0f,0.0f,1.0f);
-  // worldcenter=MVP*worldcenter;
-  // float worldcenter_w=worldcenter[3];
-
-
-  //*********Scale**************************************************************
-
-  // //Bind FrameBuffer
-  glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
-
-  glClearColor(0.0,0.0,0.0,0);   // set the clear color to black
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  simpleShader.Use();
-
-  //Transformations (Translate*Rotate*Scale)
-  T = initialT;
-  R = initialRot;
-  S = initialS;
-  M = T*R*S;
-
-  simpleShader.BindMatrices(&M,&V,&P);
-  ourModel.Draw(simpleShader);
-  frameImage = GetFrame(width, height);
-  // SaveFrameN(frameImage,width,height,22 );
-
-  getBoundingBoxColor(frameImage,rect,height,width);
-
-  sx_target=((float)original.x-(float)original.centerx)/(float)original.centerx;
-  sy_target=((float)original.y-(float)original.centery)/(float)original.centery;
-
-  sx_actual=((float)rect.x-(float)rect.centerx ) / (float)rect.centerx;
-  sy_actual=((float)rect.y-(float)rect.centery ) / (float)rect.centery;
-
-  cout << "sx_target="<< sx_target << " sy_target="<< sy_target << endl;
-  cout << "sx_actual="<< sx_actual << " sy_actual="<< sy_actual << endl;
-
-  scale_x=(sx_target/(sx_actual))*initscalex;
-  scale_y=(sy_target/(sy_actual))*initscaley;
-  // scale_x=(sx_target/(sx_actual));
-  // scale_y=(sy_target/(sy_actual));
-  // cout << "scale="<< scale_x << " " << scale_y << endl;
-  // initscalex=scale_x;
-  // initscaley=scale_y;
-  initscalez=(scale_x+scale_y)/2;
-  initscalex=initscalez;
-  initscaley=initscalez;
-
-  //****************************************************************************
-  glClearColor(0.0,0.0,0.0,0);   // set the clear color to black
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-  simpleShader.Use();
-
-  //Transformations (Translate*Rotate*Scale)
-  T = initialT;
-  R = initialRot;
-  S = glm::mat4(1);
-  S = glm::scale(S, glm::vec3(initscalex,initscaley,initscalez) );//Scale
-  M=T*R*S;
-
-  simpleShader.BindMatrices(&M,&V,&P);
-  ourModel.Draw(simpleShader);
-
-  frameImage = GetFrame(width, height);
-  // SaveFrameN(frameImage,width,height,1 );
-  //****************************************************************************
-
-  initialS[0][0]=initscalex;
-  initialS[1][1]=initscaley;
-  initialS[2][2]=initscalez;
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void paramsAprox( float* fw,
@@ -171,7 +62,7 @@ void paramsAprox( float* fw,
                 )
 {
   glm::mat4 rotMat;
-  float distance=1.0;
+  double distance=1.0;
   float tempVec[N_DIMENSIONS];
   // float min_actual=2.0f;
 
@@ -249,7 +140,41 @@ void paramsAprox( float* fw,
   }
 }
 
-void paramsAproxFocal( float* fw,
+class ShiftedImg
+{
+  public:
+    std::vector<Mat> img;
+    int tx[9];
+    int ty[9];
+    ShiftedImg(Mat& imageGray,int initx,int inity) // This is the constructor declaration
+    {
+      int height=imageGray.rows;
+      int width=imageGray.cols;
+      int xFACTOR=floor(0.01*width)-initx;
+      int yFACTOR=floor(0.01*height)-inity;
+      // int xFACTOR=floor(0.02*width);
+      // int yFACTOR=-floor(0.02*height);
+      cout<<"xFACTOR="<<xFACTOR<<" yFACTOR="<<yFACTOR<<endl;
+
+      for(int i=-1;i<2;i++)
+      {
+        for(int j=-1;j<2;j++)//((i+1)*3)+(j+1)=(i*3)+j+4
+        {
+          Mat temp;
+          tx[(i*3)+j+4]=j*xFACTOR;
+          ty[(i*3)+j+4]=i*yFACTOR;
+          Mat translation_matrix = (Mat_<float>(2,3) << 1, 0, tx[(i*3)+j+4],
+                                                           0, 1, ty[(i*3)+j+4]);
+          warpAffine(imageGray,temp, translation_matrix,
+                    Size(width,height));
+          img.push_back(temp);
+        }
+      }
+    }
+    // ~ShiftedImg();  // This is the destructor: declaration
+};
+
+void paramsAproxComplete( float* fw,
                   float* w,
                   GLuint myFrameBuffer,
                   Shader & simpleShader,
@@ -267,12 +192,131 @@ void paramsAproxFocal( float* fw,
                   int height,
                   std::vector< unsigned char >& frameImage,
                   float near,
+                  int tx,
+                  int ty
+                )
+{
+  cout<<"will initshift"<<endl;
+  ShiftedImg simg(imageGray,tx,ty);
+  cout<<"initshift initialized"<<endl;
+  // int xFACTOR=0;
+  // int yFACTOR=0;
+  //
+  float ORIGINALSCALEx=initialS[0][0]*P[0][0];
+  float ORIGINALSCALEy=initialS[1][1]*P[1][1];
+
+  float SCALEFACTOR=1.0;
+  float nearFACTOR=near;
+
+  reshape(width,height,P,nearFACTOR);
+  float SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+  float SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+  glm::mat4 T=initialT;
+  glm::mat4 R=initialR;
+  glm::mat4 S=initialS;
+  float nears[3]={0.5*near,1.0*near,1.5*near};
+  // float nears[3]={0.5,1.0,1.5};
+  float scales[3]={0.8,1.0,1.2};
+  float mindistance=1.0;
+  float tempVec[10];
+  double distance=1.0;
+  // int minI=0;
+  // for (int u = 0; u < 3; u++)
+  // {
+    // for(int k=0;k<3;k++)
+    // {
+      // nearFACTOR=nears[u];
+      nearFACTOR=near;
+      reshape(width,height,P,nearFACTOR);
+      // SCALEFACTOR=scales[k];
+      SCALEFACTOR=1.0;
+      SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+      SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+      S = glm::mat4(1);
+      S = glm::scale(S, glm::vec3(SCALEFACTORx,SCALEFACTORy,(SCALEFACTORx+SCALEFACTORy)/2 ));//Scale
+
+      M=T*R*S;
+      render(
+              myFrameBuffer,
+              simpleShader,
+              ourModel,
+              M,
+              V,
+              P,
+              width,
+              height,
+              frameImage
+            );
+      cout << endl;
+      for(int i=0;i<9;i++)
+      {
+        distance=Loss(simg.img[i], frameImage, favg,cff);
+        cout << distance << endl;
+        // if(distance<mindistance)
+        // {
+          // minI=i;
+          mindistance=distance;
+          tempVec[0]=R[0][0];
+          tempVec[1]=R[0][1];
+          tempVec[2]=R[0][2];
+
+          tempVec[3]=R[1][0];
+          tempVec[4]=R[1][1];
+          tempVec[5]=R[1][2];
+
+          tempVec[6]=nearFACTOR;
+
+          tempVec[7]=SCALEFACTOR;
+
+          tempVec[8]=simg.tx[i]*(10.0/width);
+          tempVec[9]=simg.ty[i]*(10.0/height);
+          // tempVec[8]=simg.tx[i];
+          // tempVec[9]=simg.ty[i];
+          // cout<<" tempVec[8]="<<(float)tempVec[8]<< " tempVec[9]="<<(float)tempVec[9]<<endl;
+
+          insertionFancy(fw,distance,tempVec,w,10);
+        // }
+      // }
+      cout << endl;
+      mindistance=1.0;
+    }
+  // }
+
+  //After init
+  nearFACTOR=w[6];
+  reshape(width,height,P,nearFACTOR);
+
+  SCALEFACTOR=w[7];
+  SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+  SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+  initialS = glm::mat4(1);
+  initialS = glm::scale(initialS, glm::vec3(SCALEFACTORx,SCALEFACTORy,(SCALEFACTORx+SCALEFACTORy)/2 ));//Scale
+}
+
+void paramsAproxFocal( float* fw,
+                  float* w,
+                  GLuint myFrameBuffer,
+                  Shader & simpleShader,
+                  Model & ourModel,
+                  glm::mat4 M,
+                  glm::mat4 & V,
+                  glm::mat4 & P,
+                  double &favg,
+                  double &cff,
+                  Mat & imageGray,
+                  glm::mat4 & initialT,
+                  glm::mat4 & initialR,
+                  glm::mat4 & initialS,
+                  int width,
+                  int height,
+                  std::vector< unsigned char >& frameImage,
+                  float near,
                   Mat& mask,
                   point original
                 )
 {
   glm::mat4 rotMat;
-  float distance=1.0;
+  double distance=1.0;
   float tempVec[N_DIMENSIONS];
 
   float f=near;
@@ -315,7 +359,6 @@ void paramsAproxFocal( float* fw,
     insertionFancy(fw,distance,tempVec,w,N_DIMENSIONS);
   }
 
-
 }
 
 
@@ -345,7 +388,7 @@ void paramsAproxFocal( float* fw,
 //   M = glm::mat4(1);//Init
 //
 //   glm::mat4 rotMat;
-//   float distance=1.0;
+//   double distance=1.0;
 //   float tempVec[N_DIMENSIONS];
 //   float f=focal;
 //   float tmp=focal*0.01;
@@ -557,7 +600,7 @@ void paramsAproxFocal( float* fw,
 //   cout<<"--cubeAprox--"<<endl;
 //
 //   glm::mat4 rotMat;
-//   float distance=1.0;
+//   double distance=1.0;
 //   float tempVec[N_DIMENSIONS];
 //   std::vector< unsigned char > frameImage;
 //

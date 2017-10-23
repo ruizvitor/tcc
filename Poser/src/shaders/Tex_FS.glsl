@@ -10,4 +10,5 @@ void main()
 {
   vec3 texColor = texture(texture_diffuse1, o_TexCoords).rgb;
   resultingColor = texColor;
+  // resultingColor = (1.0,0.0,0.0);
 }

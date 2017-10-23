@@ -18,7 +18,7 @@ Mat makeMask(Mat src_gray)
 {
   Mat mask;
   threshold( src_gray, mask, 1, 255, CV_THRESH_BINARY );
-  Erosion(mask);
+  // Erosion(mask);
   return mask;
 }
 

@@ -68,7 +68,7 @@ private:
 // template<typename T1,typename T2,typename T3>
 // void flipImgAlpha(T1 &old, T2 &res, T3 m, T3 n);
 
-void flipImg(unsigned char* old, unsigned char* res, int m, int n);
+void flipImg(unsigned char* old, std::vector< unsigned char >& res, int m, int n);
 
 GLint TextureFromFile(const char* path, string directory, bool gamma = false);
 GLint TextureFromFile(const char* path, string directory, bool gamma);

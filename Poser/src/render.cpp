@@ -220,6 +220,12 @@ void render(
   simpleShader.BindMatrices(&M,&V,&P);
 
   ourModel.Draw(simpleShader);
+
+  // texShader.Use();
+  //
+  // texShader.BindMatrices(&M,&V,&P);
+  //
+  // ourModel.Draw(texShader);
   // glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
 
   //****************************************************************************

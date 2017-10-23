@@ -179,7 +179,7 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
 //   }
 // }
 
-void flipImg(unsigned char* old, unsigned char* res, int m, int n)
+void flipImg(unsigned char* old, std::vector< unsigned char >& res, int m, int n)
 {
 
   for ( int i = 0; i < n; i++)
@@ -225,13 +225,14 @@ GLint TextureFromFile(const char* path, string directory, bool gamma)
   width=imageColor.cols;
   unsigned char* tempImage = imageColor.data;
 
-  vector< unsigned char > image( width * height * 3 );
-  // flipImg(tempImage,image.data(),width,height);//OPENGL INVERT Y
+  std::vector< unsigned char > image( width * height * 3 );
+  flipImg(tempImage,image,width,height);//OPENGL INVERT Y
 
   // Assign texture to ID
   glBindTexture(GL_TEXTURE_2D, textureID);
-  // glTexImage2D(GL_TEXTURE_2D, 0, gamma ? GL_SRGB : GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, &image[0]);
   glTexImage2D(GL_TEXTURE_2D, 0, gamma ? GL_SRGB : GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, &image[0]);
+  // glTexImage2D(GL_TEXTURE_2D, 0, gamma ? GL_SRGB : GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, &image[0]);
+  // glTexImage2D(GL_TEXTURE_2D, 0, gamma ? GL_SRGB : GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, &tempImage);
   glGenerateMipmap(GL_TEXTURE_2D);
 
   // Parameters

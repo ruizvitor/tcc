@@ -37,6 +37,8 @@ int rotate_x_increase=0;
 int rotate_x_decrease=0;
 int rotate_y_increase=0;
 int rotate_y_decrease=0;
+int rotate_z_increase=0;
+int rotate_z_decrease=0;
 
 int scale_increase=0;
 int scale_decrease=0;
@@ -46,8 +48,8 @@ int x_decrease=0;
 int y_increase=0;
 int y_decrease=0;
 
-int z_increase=0;
-int z_decrease=0;
+// int z_increase=0;
+// int z_decrease=0;
 int reset=0;
 int print=0;
 int near_increase=0;
@@ -224,6 +226,24 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     {
       rotate_y_decrease=0;
     }
+
+    //rotateZ
+    if (key == GLFW_KEY_V && action == GLFW_PRESS)
+    {
+      rotate_z_increase=1;
+    }
+    if (key == GLFW_KEY_V && action == GLFW_RELEASE)
+    {
+      rotate_z_increase=0;
+    }
+    if (key == GLFW_KEY_B && action == GLFW_PRESS)
+    {
+      rotate_z_decrease=1;
+    }
+    if (key == GLFW_KEY_B && action == GLFW_RELEASE)
+    {
+      rotate_z_decrease=0;
+    }
 }
 
 int main(int argc,char** argv)
@@ -311,7 +331,13 @@ int main(int argc,char** argv)
   //Initialize Model
   cout << "model will load."<< endl;
   // ourModel.loadModel("../models/boySimpleCenter.obj");
-  ourModel.loadModel("/home/dvr13/tg-1/models/testes/MyfrogLSCM45Centered.obj");
+  if(argc > 2){
+    ourModel.loadModel(argv[2]);
+  }
+  else
+  {
+    ourModel.loadModel("/home/dvr13/tg-1/models/testes/MyfrogLSCM45Centered.obj");
+  }
   // ourModel.loadModel("/home/dvr13/ARVISION/models/cube.obj");
   cout << "model loaded successfully."<< endl;
 
@@ -380,15 +406,16 @@ int main(int argc,char** argv)
   float SCALEFACTORy;
   float xFACTOR=0.0;
   float yFACTOR=0.0;
-  float zFACTOR=0.0;
+  // float zFACTOR=0.0;
   float xRotate=0.0;
   float yRotate=0.0;
+  float zRotate=0.0;
   float nearFACTOR=INITIAL_NEAR;
   std::vector< unsigned char > frameImage;
 
-  double favg;
-  double cff;
-  double distance=1.0f;
+  // double favg;
+  // double cff;
+  // double distance=1.0f;
   std::vector< unsigned char > temp(width*height*3);
 
   glm::mat4 T;
@@ -451,6 +478,8 @@ int main(int argc,char** argv)
     }
     cout<<endl;
   }
+
+  Mat src=Mat(height, width, CV_8UC3);
 
   Mat clon=Mat::zeros(height, width, CV_8UC3);
   while (!glfwWindowShouldClose(window))
@@ -545,6 +574,14 @@ int main(int argc,char** argv)
     {
       yRotate-=0.1;
     }
+    if(rotate_z_increase)
+    {
+      zRotate+=0.1;
+    }
+    if(rotate_z_decrease)
+    {
+      zRotate-=0.1;
+    }
 
     if(face1){
       face1=0;
@@ -568,26 +605,26 @@ int main(int argc,char** argv)
       initialRot[3][2]=0.0f;
       initialRot[3][3]=1.0f;
 
-      point rect;
-      boxfocal(original,
-              rect,
-              myFrameBuffer.FBO,
-              simpleShader,
-              ourModel,
-              M,
-              V,
-              P,
-              T,
-              R,
-              S,
-              width,
-              height,
-              frameImage
-            );
-      ORIGINALSCALEx=S[0][0]*P[0][0];
-      ORIGINALSCALEy=S[1][1]*P[1][1];
-      SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
-      SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+      // point rect;
+      // boxfocal(original,
+      //         rect,
+      //         myFrameBuffer.FBO,
+      //         simpleShader,
+      //         ourModel,
+      //         M,
+      //         V,
+      //         P,
+      //         T,
+      //         R,
+      //         S,
+      //         width,
+      //         height,
+      //         frameImage
+      //       );
+      // ORIGINALSCALEx=S[0][0]*P[0][0];
+      // ORIGINALSCALEy=S[1][1]*P[1][1];
+      // SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+      // SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
     }
 
     if(face2){
@@ -612,26 +649,116 @@ int main(int argc,char** argv)
       initialRot[3][2]=0.0f;
       initialRot[3][3]=1.0f;
 
-      point rect;
-      boxfocal(original,
-              rect,
-              myFrameBuffer.FBO,
-              simpleShader,
-              ourModel,
-              M,
-              V,
-              P,
-              T,
-              R,
-              S,
-              width,
-              height,
-              frameImage
-            );
-      ORIGINALSCALEx=S[0][0]*P[0][0];
-      ORIGINALSCALEy=S[1][1]*P[1][1];
-      SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
-      SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+      // point rect;
+      // boxfocal(original,
+      //         rect,
+      //         myFrameBuffer.FBO,
+      //         simpleShader,
+      //         ourModel,
+      //         M,
+      //         V,
+      //         P,
+      //         T,
+      //         R,
+      //         S,
+      //         width,
+      //         height,
+      //         frameImage
+      //       );
+      // ORIGINALSCALEx=S[0][0]*P[0][0];
+      // ORIGINALSCALEy=S[1][1]*P[1][1];
+      // SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+      // SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+    }
+
+    if(face3){
+      face3=0;
+      initialRot[0][0]=0.0f;
+      initialRot[0][1]=0.0f;
+      initialRot[0][2]=-1.0f;
+      initialRot[0][3]=0.0f;
+
+      initialRot[1][0]=0.0f;
+      initialRot[1][1]=-1.0f;
+      initialRot[1][2]=0.0f;
+      initialRot[1][3]=0.0f;
+
+      initialRot[2][0]=1.0f;
+      initialRot[2][1]=0.0f;
+      initialRot[2][2]=0.0f;
+      initialRot[2][3]=0.0f;
+
+      initialRot[3][0]=0.0f;
+      initialRot[3][1]=0.0f;
+      initialRot[3][2]=0.0f;
+      initialRot[3][3]=1.0f;
+    }
+
+    if(face4){
+      face4=0;
+      initialRot[0][0]=0.0f;
+      initialRot[0][1]=0.0f;
+      initialRot[0][2]=1.0f;
+      initialRot[0][3]=0.0f;
+
+      initialRot[1][0]=0.0f;
+      initialRot[1][1]=-1.0f;
+      initialRot[1][2]=0.0f;
+      initialRot[1][3]=0.0f;
+
+      initialRot[2][0]=-1.0f;
+      initialRot[2][1]=0.0f;
+      initialRot[2][2]=0.0f;
+      initialRot[2][3]=0.0f;
+
+      initialRot[3][0]=0.0f;
+      initialRot[3][1]=0.0f;
+      initialRot[3][2]=0.0f;
+      initialRot[3][3]=1.0f;
+    }
+    if(face5){
+      face5=0;
+      initialRot[0][0]=1.0f;
+      initialRot[0][1]=0.0f;
+      initialRot[0][2]=0.0f;
+      initialRot[0][3]=0.0f;
+
+      initialRot[1][0]=0.0f;
+      initialRot[1][1]=0.0f;
+      initialRot[1][2]=-1.0f;
+      initialRot[1][3]=0.0f;
+
+      initialRot[2][0]=0.0f;
+      initialRot[2][1]=-1.0f;
+      initialRot[2][2]=0.0f;
+      initialRot[2][3]=0.0f;
+
+      initialRot[3][0]=0.0f;
+      initialRot[3][1]=0.0f;
+      initialRot[3][2]=0.0f;
+      initialRot[3][3]=1.0f;
+    }
+    if(face6){
+      face6=0;
+      initialRot[0][0]=1.0f;
+      initialRot[0][1]=0.0f;
+      initialRot[0][2]=0.0f;
+      initialRot[0][3]=0.0f;
+
+      initialRot[1][0]=0.0f;
+      initialRot[1][1]=0.0f;
+      initialRot[1][2]=1.0f;
+      initialRot[1][3]=0.0f;
+
+      initialRot[2][0]=0.0f;
+      initialRot[2][1]=1.0f;
+      initialRot[2][2]=0.0f;
+      initialRot[2][3]=0.0f;
+
+      initialRot[3][0]=0.0f;
+      initialRot[3][1]=0.0f;
+      initialRot[3][2]=0.0f;
+      initialRot[3][3]=1.0f;
     }
 
     if(reset)
@@ -644,9 +771,10 @@ int main(int argc,char** argv)
       SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
       xFACTOR=0.0f;
       yFACTOR=0.0;
-      zFACTOR=0.0f;
+      // zFACTOR=0.0f;
       xRotate=0.0f;
       yRotate=0.0f;
+      zRotate=0.0f;
     }
 
     // P=glm::translate(P,glm::vec3(xFACTOR+2.0f/width, yFACTOR+2.0/height ,0.0f) );
@@ -659,6 +787,7 @@ int main(int argc,char** argv)
     R = initialRot;
     R = glm::rotate(R, glm::radians(xRotate), glm::vec3(1.0f,0.0f,0.0f));//Rotate
     R = glm::rotate(R, glm::radians(yRotate), glm::vec3(0.0f,1.0f,0.0f));//Rotate
+    R = glm::rotate(R, glm::radians(zRotate), glm::vec3(0.0f,0.0f,1.0f));//Rotate
     S = glm::mat4(1);
     // float currentFrame = fmod(glfwGetTime(),360)*10;
     S = glm::scale(S, glm::vec3(SCALEFACTORx,SCALEFACTORy,(SCALEFACTORx+SCALEFACTORy)/2 ));//Scale
@@ -715,6 +844,10 @@ int main(int argc,char** argv)
       cout<< "-------warp------"<<endl;
       cout<< originalX+xFACTOR << " " << -(originalY+yFACTOR)<<endl;
 
+      flip(src,src,0);//vertical
+      cvtColor(src,src,CV_BGR2RGB);
+      imwrite("test.png",src);
+
       // favg=Mean(warped);
       // cff=MyCff(warped,favg);
       // std::vector< unsigned char > frameImage(clon.begin<unsigned char>(), clon.end<unsigned char>());
@@ -750,8 +883,8 @@ int main(int argc,char** argv)
     add(warped,clon,warped);
     render(
             myFrameBuffer,
-            textureShader,
             simpleShader,
+            textureShader,
             screenShader,
             ourModel,
             M,
@@ -767,9 +900,11 @@ int main(int argc,char** argv)
 
     getBoundingBoxColor(temp,rect,height,width);
 
-    Mat src = Mat(height, width, CV_8UC3);
+    src = Mat(height, width, CV_8UC3);
     src.data=temp.data();
     clon=src.clone();
+    // flip(src,src,0);//vertical
+    // imwrite("test.png",src);
 
     if(activatelaplacian==1)
     {

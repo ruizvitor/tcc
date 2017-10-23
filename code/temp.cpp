@@ -108,6 +108,7 @@ int main(int argc,char** argv)
   int m=0;
   int f=0;
   int h=0;
+  int c=0;
   int height=0;
   int width=0;
   int tx=0;
@@ -115,7 +116,7 @@ int main(int argc,char** argv)
   point original;
   // glm::mat4 initialRot;
   Mat mask;
-  while ((opt = getopt(argc,argv,"p:m:f:h")) != EOF)
+  while ((opt = getopt(argc,argv,"p:m:f:h:c")) != EOF)
   {
     switch(opt)
     {
@@ -145,6 +146,14 @@ int main(int argc,char** argv)
       {
         cout<<"-f posefilePath -p photopath -m modelpath  -h 0 or 1 for downhillsimplex"<<endl;
         h=1;
+        // c=0;
+        break;
+      }
+      case 'c':
+      {
+        cout<<"-f posefilePath -p photopath -m modelpath  -h 0 or 1 for downhillsimplex"<<endl;
+        c=1;
+        // h=0;
         break;
       }
       default:
@@ -176,8 +185,9 @@ int main(int argc,char** argv)
   imageGray = Mat(width,height,CV_8UC1);
   warpAffine(imageColor,imageColor, translation_matrix,
             Size(width,height));
-  toGray(imageColor,imageGray);//use average desaturate istead of lightness
-
+  cvtColor(imageColor,imageGray,CV_BGR2GRAY);
+  // toGray(imageColor,imageGray);//use average desaturate istead of lightness
+  // imwrite("out/prev.png",imageGray);
   getBoundingBox(imageGray,original);
   imgProj = imageColor.data;
   favg=Mean(imageGray);
@@ -202,80 +212,13 @@ int main(int argc,char** argv)
   //Create FrameBuffer
   GLuint myFrameBuffer;
   GenerateFBO(&myFrameBuffer, width, height);
-
-  // cout<< "-------T------"<<endl;
-  // for(int i=0;i<4;i++)
-  // {
-  //   for(int j=0;j<4;j++)
-  //   {
-  //     cout<< T[i][j] <<" ";
-  //   }
-  //   cout<<endl;
-  // }
-  //
-  // cout<< "-------R------"<<endl;
-  // for(int i=0;i<4;i++)
-  // {
-  //   for(int j=0;j<4;j++)
-  //   {
-  //     cout<< R[i][j] <<" ";
-  //   }
-  //   cout<<endl;
-  // }
-  //
-  // cout<< "-------S------"<<endl;
-  // for(int i=0;i<4;i++)
-  // {
-  //   for(int j=0;j<4;j++)
-  //   {
-  //     cout<< S[i][j] <<" ";
-  //   }
-  //   cout<<endl;
-  // }
-  //
+  std::vector< unsigned char > frameImage;
   M=T*R*S;//Translate
-  //
-  // cout<< "-------M------"<<endl;
-  // for(int i=0;i<4;i++)
-  // {
-  //   for(int j=0;j<4;j++)
-  //   {
-  //     cout<< M[i][j] <<" ";
-  //   }
-  //   cout<<endl;
-  // }
   //Calculate Projection Matrix
   reshape(width, height, P, near);
   //Calculate View Matrix
   updateCamera(V);
-
-
-
-  ////TEST CUBE FACES FOR BEST INITIAL pose
-  float distance=1.0;
-  std::vector< unsigned char > frameImage;
-  // float scaleX=1.0f;
-  // float scaleY=1.0f;
-  // float scaleZ=1.0f;
-  float w[N_DIMENSIONS*N_DIMENSIONSSUM];
-  float fw[N_DIMENSIONSSUM];
-
-
-  for(int j=0;j<N_DIMENSIONSSUM;j++)
-  {
-    fw[j]=2.0f+j;
-  }
-
-
-  for(int i=0;i<N_DIMENSIONS;i++)
-  {
-    for(int j=0;j<N_DIMENSIONSSUM;j++)
-    {
-      w[(i*N_DIMENSIONSSUM)+j]=2.0f+j;
-    }
-  }
-
-
+  double distance=1.0;
   render(
           myFrameBuffer,
           simpleShader,
@@ -287,23 +230,10 @@ int main(int argc,char** argv)
           height,
           frameImage
         );
+  // ApplyMask(mask,frameImage);
   distance=Loss(imageGray, frameImage, favg,cff);
   cout << distance << endl;
   SaveFrameN(frameImage,width,height,111,imageColor );
-
-  float tempVec[N_DIMENSIONSSUM];
-  tempVec[0]=R[0][0];
-  tempVec[1]=R[0][1];
-  tempVec[2]=R[0][2];
-
-  tempVec[3]=R[1][0];
-  tempVec[4]=R[1][1];
-  tempVec[5]=R[1][2];
-
-  tempVec[6]=near;
-
-  insertionFancy(fw,distance,tempVec,w,N_DIMENSIONS);
-
 
   // boxfocal(original,
   //       myFrameBuffer,
@@ -339,7 +269,160 @@ int main(int argc,char** argv)
   //         initialRot
   //       );
 
+  float ORIGINALSCALEx=S[0][0]*P[0][0];
+  float ORIGINALSCALEy=S[1][1]*P[1][1];
+
+  if(c==1){
+    cout << "will enter paramcomplete" << endl;
+
+    ////TEST CUBE FACES FOR BEST INITIAL pose
+
+    // float scaleX=1.0f;
+    // float scaleY=1.0f;
+    // float scaleZ=1.0f;
+
+    float w[10*11];
+    float fw[11];
+
+
+    for(int j=0;j<11;j++)
+    {
+      fw[j]=2.0f+j;
+    }
+
+
+    for(int i=0;i<10;i++)
+    {
+      for(int j=0;j<11;j++)
+      {
+        w[(i*11)+j]=2.0f+j;
+      }
+    }
+
+    paramsAproxComplete(fw,
+                w,
+                myFrameBuffer,
+                simpleShader,
+                ourModel,
+                M,
+                V,
+                P,
+                favg,
+                cff,
+                imageGray,
+                T,
+                R,
+                S,
+                width,
+                height,
+                frameImage,
+                near,
+                tx,
+                ty
+              );
+    cout<< endl;
+
+    for(int i=0;i<11;i++)
+    {
+      cout << "fw["<<i<<"]="<<fw[i]<< " , ";
+      for(int j=0;j<10;j++)
+      {
+        cout << w[(i*10)+j]<< " ";
+      }
+      cout<<endl;
+    }
+    cout<<endl;
+
+    downhill(fw,
+            w,
+            myFrameBuffer,
+            simpleShader,
+            ourModel,
+            M,
+            V,
+            P,
+            favg,
+            cff,
+            imageGray,
+            width,
+            height,
+            T,
+            R,
+            S,
+            10,
+            11,
+            ORIGINALSCALEx,
+            ORIGINALSCALEy
+          );
+    for(int i=0;i<11;i++)
+    {
+      cout << "fw["<<i<<"]="<<fw[i]<< " , ";
+      for(int j=0;j<10;j++)
+      {
+        cout << w[(i*10)+j]<< " ";
+      }
+      cout<<endl;
+    }
+    cout<<endl;
+    float tempVec[N_DIMENSIONSSUM];
+    tempVec[0]=w[0];
+    tempVec[1]=w[1];
+    tempVec[2]=w[2];
+
+    tempVec[3]=w[3];
+    tempVec[4]=w[4];
+    tempVec[5]=w[5];
+    tempVec[6]=w[6];
+    calculateZ(tempVec,R);
+
+    reshape(width,height,P,w[6]);
+
+    int tx=round(w[8]*(width/10));
+    int ty=round(w[9]*(height/10));
+    // int tx=w[8];
+    // int ty=w[9];
+    cout<<"tx="<<tx<<endl;
+    cout<<"ty="<<ty<<endl;
+    Mat translation_matrix = (Mat_<float>(2,3) << 1, 0, tx,
+                                                  0, 1, ty);
+    warpAffine(imageColor,imageColor, translation_matrix,
+              Size(width,height));
+
+    warpAffine(imageGray,imageGray, translation_matrix,
+              Size(width,height),INTER_LINEAR, BORDER_CONSTANT);
+    float SCALEFACTOR=w[7];
+    float SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+    float SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+    S = glm::mat4(1);
+    S = glm::scale(S, glm::vec3(SCALEFACTORx,SCALEFACTORy,(SCALEFACTORx+SCALEFACTORy)/2 ));//Scale
+
+
+  }
+
   if(h==1){
+    ////TEST CUBE FACES FOR BEST INITIAL pose
+    // float scaleX=1.0f;
+    // float scaleY=1.0f;
+    // float scaleZ=1.0f;
+    float w[N_DIMENSIONS*N_DIMENSIONSSUM];
+    float fw[N_DIMENSIONSSUM];
+
+
+    for(int j=0;j<N_DIMENSIONSSUM;j++)
+    {
+      fw[j]=2.0f+j;
+    }
+
+
+    for(int i=0;i<N_DIMENSIONS;i++)
+    {
+      for(int j=0;j<N_DIMENSIONSSUM;j++)
+      {
+        w[(i*N_DIMENSIONSSUM)+j]=2.0f+j;
+      }
+    }
+
+    float tempVec[N_DIMENSIONSSUM];
     //paramsAprox
     paramsAprox(fw,
                 w,
@@ -392,9 +475,22 @@ int main(int argc,char** argv)
             height,
             T,
             R,
-            S
+            S,
+            N_DIMENSIONS,
+            N_DIMENSIONSSUM,
+            ORIGINALSCALEx,
+            ORIGINALSCALEy
           );
-
+    for(int i=0;i<N_DIMENSIONSSUM;i++)
+    {
+      cout << "fw["<<i<<"]="<<fw[i]<< " , ";
+      for(int j=0;j<N_DIMENSIONS;j++)
+      {
+        cout << w[(i*N_DIMENSIONS)+j]<< " ";
+      }
+      cout<<endl;
+    }
+    cout<<endl;
     tempVec[0]=w[0];
     tempVec[1]=w[1];
     tempVec[2]=w[2];
@@ -426,8 +522,6 @@ int main(int argc,char** argv)
   cout << distance << endl;
   SaveFrameN(frameImage,width,height,888,imageColor );
 
-
-
   //Texture Projection
   glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
   frameImage = GetFrame(width, height);
@@ -435,47 +529,6 @@ int main(int argc,char** argv)
   std::vector< float > newUV = GetNewUV(width, height);
   MapTex(ourModel,imgProj,newUV,(unsigned int)width,(unsigned int)height);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  //Bind FrameBuffer
-  // glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
-  // /* Render here */
-  // // Clear the colorbuffer
-  // glClearColor(0.0,0.0,0.0,0);   // set the clear color to black
-  // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  //
-  //
-  // textureShader.Use();
-  //
-  // //Transformations (Translate*Rotate*Scale)
-  // M = glm::mat4(1);//Init
-  // // M = glm::translate(M, glm::vec3(w[7],w[8],0.0f));//Translate
-  // glm::vec3 myZ=cross(glm::vec3(w[0],w[1],w[2]),glm::vec3(w[3],w[4],w[5]) );
-  // cout << "{" << myZ[0] << "," << myZ[1] << "," << myZ[2] << "} " << endl << endl;
-  //
-  //
-  // initialRot[0][0]=w[0];//x1
-  // initialRot[1][0]=w[3];//y1
-  // initialRot[2][0]=-myZ[0];//z1
-  //
-  // initialRot[0][1]=w[1];//x2
-  // initialRot[1][1]=w[4];//y2
-  // initialRot[2][1]=-myZ[1];//z2
-  //
-  // initialRot[0][2]=w[2];//x3
-  // initialRot[1][2]=w[5];//y3
-  // initialRot[2][2]=-myZ[2];//z3
-  //
-  // T = glm::mat4(1);
-  // R = initialRot;
-  // S = glm::mat4(1);
-  // S = glm::scale(S, glm::vec3(scaleX,scaleX,scaleX) );//Scale
-  // M=T*R*S;
-  //
-  // textureShader.BindMatrices(&M,&V,&P);
-  //
-  // ourModel.Draw(textureShader);
-  // SaveFrame(width, height, 333);
-
 
   glfwSetWindowShouldClose(window, 1);
 

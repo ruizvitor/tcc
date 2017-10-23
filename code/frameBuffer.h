@@ -25,7 +25,7 @@ void toGray(cv::Mat &image, cv::Mat &imgray)
       avg=0;
       for(unsigned k=0;k<3;k++)
       {
-        avg+=img[(i*m*3+j*3)+k];
+        avg+=img[ 3*((i*m)+j) +k];
       }
       gray[(i*m+j)]=avg/3;
     }
@@ -179,7 +179,9 @@ void SaveFrame(unsigned int w,unsigned int h,unsigned int i)
 void SaveFrameN(std::vector< unsigned char >& buf,unsigned int w,unsigned int h,unsigned int i,Mat& imageColor  )
 {
   Mat src = Mat(h, w, CV_8UC3);
+  std::string s = "out/nor"+std::to_string(i)+".png";
   src.data=buf.data();
+  imwrite( s,src );
   Mat src_gray;
   Mat dst;
 
@@ -198,7 +200,7 @@ void SaveFrameN(std::vector< unsigned char >& buf,unsigned int w,unsigned int h,
   // addWeighted( dst, alpha, imageColor, beta, 0.0, dst);
   add( dst, imageColor, dst);
 
-  std::string s = "out/"+std::to_string(i)+".png";
+  s = "out/tmp"+std::to_string(i)+".png";
   imwrite( s,dst );
 
   // char const *pchar = s.c_str();
