@@ -22,6 +22,32 @@ Mat makeMask(Mat src_gray)
   return mask;
 }
 
+void invertGray(Mat& image, Mat& masked)
+{
+
+  uint8_t *mask = masked.data;
+  uint8_t *img = image.data;
+  unsigned int n=masked.rows;
+  unsigned int m=masked.cols;
+
+  for(unsigned i=0;i<n;i++)
+  {
+    for(unsigned j=0;j<m;j++)
+    {
+      int address=(i*m)+j;
+      if(mask[address]==0)
+      {
+        img[address]=0;
+      }
+      else
+      {
+        img[address]=255-img[address];
+      }
+    }
+  }
+
+}
+
 void ApplyMask(Mat M, std::vector< unsigned char >& frameImage)
 {
 

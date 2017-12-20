@@ -18,6 +18,7 @@ layout(location = 1) out vec3 newUVS;
 void main()
 {
   vec3 normal = normalize(normalInterp);
+  // normal[1] = 1-normal[1];
   resultingColor = normal;
   // resultingColor = vec3(1,0,0);
   newUVS = vec3(o_TexCoords.y,o_TexCoords.x,0.0);

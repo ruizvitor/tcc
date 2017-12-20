@@ -32,6 +32,7 @@
 
 void reshape(int w, int h, glm::mat4& P, float near)
 {
+  // P = glm::frustum(-1.0f, 1.0f, ((float)h/(float)w), -((float)h/(float)w),near,1000.0f);
   P = glm::frustum(-1.0f, 1.0f, -((float)h/(float)w), ((float)h/(float)w),near,1000.0f);
 }
 

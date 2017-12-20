@@ -14,3 +14,4 @@ clean:
 
 fo:
 	rm out/tmp*
+	rm out/nor*

@@ -109,6 +109,7 @@ int main(int argc,char** argv)
   int f=0;
   int h=0;
   int c=0;
+  int I=0;
   int height=0;
   int width=0;
   int tx=0;
@@ -116,7 +117,7 @@ int main(int argc,char** argv)
   point original;
   // glm::mat4 initialRot;
   Mat mask;
-  while ((opt = getopt(argc,argv,"p:m:f:h:c")) != EOF)
+  while ((opt = getopt(argc,argv,"p:m:f:h:c:i")) != EOF)
   {
     switch(opt)
     {
@@ -156,6 +157,13 @@ int main(int argc,char** argv)
         // h=0;
         break;
       }
+      case 'i':
+      {
+        cout<<"-f posefilePath -p photopath -m modelpath  -h 0 or 1 for downhillsimplex"<<endl;
+        I=1;
+        // h=0;
+        break;
+      }
       default:
       {
         cout<<"-f posefilePath -p photopath -m modelpath  -h 0 or 1 for downhillsimplex"<<endl; abort();
@@ -177,6 +185,7 @@ int main(int argc,char** argv)
     cout<<"will load image"<<endl;
     imageColor = imread("../material/testes/back4x.JPG", CV_LOAD_IMAGE_COLOR);
   }
+
   Mat translation_matrix;
   translation_matrix = (Mat_<float>(2,3) << 1, 0, tx,
                                             0, 1, ty);
@@ -190,9 +199,14 @@ int main(int argc,char** argv)
   // imwrite("out/prev.png",imageGray);
   getBoundingBox(imageGray,original);
   imgProj = imageColor.data;
+  mask=makeMask(imageGray);
+  if(I==1)
+  {
+    invertGray(imageGray, mask);
+    // imwrite("invertTest.png",imageGray);
+  }
   favg=Mean(imageGray);
   cff=MyCff(imageGray,favg);
-  mask=makeMask(imageGray);
   if(m==0)
   {
     //Default
@@ -233,6 +247,11 @@ int main(int argc,char** argv)
   // ApplyMask(mask,frameImage);
   distance=Loss(imageGray, frameImage, favg,cff);
   cout << distance << endl;
+
+  ofstream disOUTPUT;
+  disOUTPUT.open ("disOUTPUT.txt", ios::out | ios::trunc );
+  disOUTPUT << "pre = "<< distance << endl;
+
   SaveFrameN(frameImage,width,height,111,imageColor );
 
   // boxfocal(original,
@@ -503,7 +522,73 @@ int main(int argc,char** argv)
 
 
     reshape(width,height,P,w[6]);
+
+    cout<<"----out------"<<endl;
+    cout<<w[6]<<endl<<endl;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        cout<<T[i][j]<<" ";
+      }
+      cout<<endl;
+    }
+    cout<<endl;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        cout<<R[i][j]<<" ";
+      }
+      cout<<endl;
+    }
+    cout<<endl;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        cout<<S[i][j]<<" ";
+      }
+      cout<<endl;
+    }
+    cout<<endl;
+    cout<<tx<<" "<<ty<<endl;
+    cout<<"----out------"<<endl;
+
+    ofstream myfile;
+    myfile.open ("pose.txt", ios::out | ios::trunc );
+    myfile<<w[6]<<endl<<endl;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        myfile<<T[i][j]<<" ";
+      }
+      myfile<<endl;
+    }
+    myfile<<endl;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        myfile<<R[i][j]<<" ";
+      }
+      myfile<<endl;
+    }
+    myfile<<endl;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        myfile<<S[i][j]<<" ";
+      }
+      myfile<<endl;
+    }
+    myfile<<endl;
+    myfile<<tx<<" "<<ty<<endl;
+    myfile.close();
   }
+
 
 
   M=T*R*S;
@@ -521,6 +606,7 @@ int main(int argc,char** argv)
   distance=Loss(imageGray, frameImage, favg,cff);
   cout << distance << endl;
   SaveFrameN(frameImage,width,height,888,imageColor );
+  disOUTPUT << "pos = "<< distance << endl;
 
   //Texture Projection
   glBindFramebuffer(GL_FRAMEBUFFER, myFrameBuffer);
@@ -532,6 +618,7 @@ int main(int argc,char** argv)
 
   glfwSetWindowShouldClose(window, 1);
 
+  disOUTPUT.close();
   glfwTerminate();
   return 0;
 }

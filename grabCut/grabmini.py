@@ -101,9 +101,8 @@ def onmouse(event,x,y,flags,param):
                 cv2.circle(img,(x,y),thickness,value['color'],-1)
                 cv2.circle(mask,(x,y),thickness,value['val'],-1)
 
-if __name__ == '__main__':
-
-    global toggle
+def main():
+    global img,img2,drawing,value,mask,rectangle,rect,rect_or_mask,ix,iy,rect_over,toggle
     # print documentation
     print(__doc__)
 
@@ -120,9 +119,9 @@ if __name__ == '__main__':
     resize=0
     print(h,w);
     if( (h>1080)and(w>1920) ):
-        resize=1
-        img3 = img.copy()
-        img = cv2.resize(img, (0,0), fx=0.125, fy=0.125)
+      resize=1
+      img3 = img.copy()
+      img = cv2.resize(img, (0,0), fx=0.25, fy=0.25)
 
 
     img2 = img.copy()                               # a copy of original image
@@ -217,3 +216,6 @@ if __name__ == '__main__':
         output = cv2.bitwise_and(img2,img2,mask=mask2)
 
     cv2.destroyAllWindows()
+    sys.exit(resize)
+if __name__ == '__main__':
+    main()

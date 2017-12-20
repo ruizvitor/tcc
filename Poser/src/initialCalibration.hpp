@@ -21,6 +21,8 @@ typedef struct{
 
 void getInitPose(glm::mat4& initialRot,const char* optarg);
 
+void getBetterInitPose(float &near,  glm::mat4& T,glm::mat4& R, glm::mat4& S,int& tx, int& ty,const char* optarg);
+
 void getBoundingBox(Mat& image, point& diff);
 
 void getBoundingBoxColor(std::vector< unsigned char >& img, point& diff, int n, int m);

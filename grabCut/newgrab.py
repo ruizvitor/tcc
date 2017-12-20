@@ -135,10 +135,10 @@ if __name__ == '__main__':
     # cv2.namedWindow('input')
     cv2.namedWindow('input',cv2.WINDOW_NORMAL)
     #cv2.namedWindow('output',cv2.WINDOW_NORMAL | cv2.WINDOW_GUI_NORMAL)
-    cv2.resizeWindow('input', 600,600)
+    # cv2.resizeWindow('input', 600,600)
     cv2.namedWindow('output',cv2.WINDOW_NORMAL)
     #cv2.namedWindow('output',cv2.WINDOW_NORMAL | cv2.WINDOW_GUI_NORMAL)
-    cv2.resizeWindow('output', 600,600)
+    # cv2.resizeWindow('output', 600,600)
     cv2.setMouseCallback('input',onmouse)
     cv2.moveWindow('input',img.shape[1]+10,90)
 

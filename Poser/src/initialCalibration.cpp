@@ -24,6 +24,57 @@ void getInitPose(glm::mat4& initialRot,const char* optarg)
   }
 }
 
+void getBetterInitPose(float &near,  glm::mat4& T,glm::mat4& R, glm::mat4& S,int& tx, int& ty,const char* optarg)
+{
+  FILE* fpose=fopen(optarg, "r" );
+  if (fpose!=NULL)
+  {
+    fscanf(fpose,"%f",&near);
+    std::cout<<near<<std::endl;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        fscanf(fpose,"%f",&T[i][j]);
+        std::cout<<T[i][j]<<" ";
+      }
+      std::cout<<std::endl;
+    }
+    std::cout<<std::endl;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        fscanf(fpose,"%f",&R[i][j]);
+        std::cout<<R[i][j]<<" ";
+      }
+      std::cout<<std::endl;
+    }
+    std::cout<<std::endl;
+    for (int i = 0; i < 4; i++)
+    {
+      for (int j = 0; j < 4; j++)
+      {
+        fscanf(fpose,"%f",&S[i][j]);
+        std::cout<<S[i][j]<<" ";
+      }
+      std::cout<<std::endl;
+    }
+    std::cout<<std::endl;
+    fscanf(fpose,"%d",&tx);
+    std::cout<<tx<<" ";
+    fscanf(fpose,"%d",&ty);
+    std::cout<<ty<<std::endl;
+    std::cout << "sucess in reading pose file" << std::endl;
+    fclose (fpose);
+  }
+  else
+  {
+    std::cout << "fail to open file with read privilage" << std::endl;
+    abort();
+  }
+}
+
 void getBoundingBox(Mat& image, point& diff)
 {
   uint8_t *img = image.data;

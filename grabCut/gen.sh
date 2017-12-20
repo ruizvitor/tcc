@@ -1,4 +1,7 @@
 #!/bin/bash
+# RESIZE=$(python grabmini.py $1)
 python grabmini.py $1
-python test.py grabcut_output.png $1
-../imgProc/./runme $1b.JPG
+python addmask.py grabcut_output.png $1
+#y=${$1%.*}
+#../imgProc/./align $yb.JPG
+../imgProc/./align $1b.JPG

@@ -8,7 +8,7 @@
 #define MAX_ITER 255
 #define MIN_ERROR 0.01
 // #define MIN_VAR 0.000001
-#define MIN_VAR 0.000000001
+#define MIN_VAR 0.0000001
 #define N_DIMENSIONS 7
 #define N_DIMENSIONSSUM 8
 #define MOVEFACTOR 2.5f

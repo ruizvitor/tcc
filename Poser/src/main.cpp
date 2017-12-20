@@ -349,57 +349,21 @@ int main(int argc,char** argv)
   M = glm::mat4(1);
   //Init viewport
   glViewport(0, 0, width, height);
-  reshape(width,height,P,INITIAL_NEAR);
+  // reshape(width,height,P,INITIAL_NEAR);
   updateCamera(V);
   ScreenQuad squad;
 
 
   // Size TheGlWindowSize=Size(width,height);
 
-
-
   glm::mat4 initialRot;
+  glm::mat4 T;
+  glm::mat4 R;
+  glm::mat4 S;
 
-  //Default
-  // initialRot[0][0]=-1.0f;
-  // initialRot[0][1]=0.0f;
-  // initialRot[0][2]=0.0f;
-  // initialRot[0][3]=0.0f;
-  //
-  // initialRot[1][0]=0.0f;
-  // initialRot[1][1]=1.0f;//original -1
-  // initialRot[1][2]=0.0f;
-  // initialRot[1][3]=0.0f;
-  //
-  // initialRot[2][0]=0.0f;
-  // initialRot[2][1]=0.0f;
-  // initialRot[2][2]=-1.0f;
-  // initialRot[2][3]=0.0f;
-  //
-  // initialRot[3][0]=0.0f;
-  // initialRot[3][1]=0.0f;
-  // initialRot[3][2]=0.0f;
-  // initialRot[3][3]=1.0f;
-
-  initialRot[0][0]=1.0f;
-  initialRot[0][1]=0.0f;
-  initialRot[0][2]=0.0f;
-  initialRot[0][3]=0.0f;
-
-  initialRot[1][0]=0.0f;
-  initialRot[1][1]=-1.0f;//original -1
-  initialRot[1][2]=0.0f;
-  initialRot[1][3]=0.0f;
-
-  initialRot[2][0]=0.0f;
-  initialRot[2][1]=0.0f;
-  initialRot[2][2]=1.0f;
-  initialRot[2][3]=0.0f;
-
-  initialRot[3][0]=0.0f;
-  initialRot[3][1]=0.0f;
-  initialRot[3][2]=0.0f;
-  initialRot[3][3]=1.0f;
+  float nearFACTOR=INITIAL_NEAR;
+  float ORIGINALSCALEx;
+  float ORIGINALSCALEy;
 
   float SCALEFACTOR=1.0f;
   float SCALEFACTORx;
@@ -410,64 +374,119 @@ int main(int argc,char** argv)
   float xRotate=0.0;
   float yRotate=0.0;
   float zRotate=0.0;
-  float nearFACTOR=INITIAL_NEAR;
+  int specialreset=0;
+  float filenear=0;
+
   std::vector< unsigned char > frameImage;
-
-  // double favg;
-  // double cff;
-  // double distance=1.0f;
   std::vector< unsigned char > temp(width*height*3);
-
-  glm::mat4 T;
-  glm::mat4 R;
-  glm::mat4 S;
-  T = glm::mat4(1);
-  R = initialRot;
-  S = glm::mat4(1);
-  float ORIGINALSCALEx=INITIAL_SCALE*P[0][0];
-  float ORIGINALSCALEy=INITIAL_SCALE*P[1][1];
-  SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
-  SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
-  S = glm::scale(S, glm::vec3(SCALEFACTORx,SCALEFACTORy,(SCALEFACTORx+SCALEFACTORy)/2 ));//Scale
-
-
   point rect;
-  boxfocal(original,
-          rect,
-          myFrameBuffer.FBO,
-          simpleShader,
-          ourModel,
-          M,
-          V,
-          P,
-          T,
-          R,
-          S,
-          width,
-          height,
-          frameImage
-        );
-
   Mat warped=flip_image.clone();
   Mat translation_matrix;
-  int originalX=rect.centerx-original.centerx;
-  int originalY=rect.centery-original.centery;
-  translation_matrix = (Mat_<float>(2,3) << 1, 0, originalX,
-                                            0, 1, originalY);
-  // translation_matrix = (Mat_<float>(2,3) << 1, 0, 0,
-  //                                           0, 1, rect.centery-original.centery);
-  warpAffine(flip_image,warped, translation_matrix,
-            Size(width,height));
-  cout<< "-------warp------"<<endl;
-  cout<< originalX << " " << -(originalY)<<endl;
+
+  int originalX;
+  int originalY;
+  if(argc > 3)
+  {
+    specialreset=1;
+    getBetterInitPose(nearFACTOR,T,initialRot,S,originalX,originalY,argv[3]);
+    R=initialRot;
+    filenear=nearFACTOR;
+    reshape(width,height,P,INITIAL_NEAR);
+    ORIGINALSCALEx=S[0][0]*P[0][0];
+    ORIGINALSCALEy=S[1][1]*P[1][1];
+    originalY=-originalY;
+    translation_matrix = (Mat_<float>(2,3) << 1, 0, originalX,
+                                              0, 1, originalY);
+
+    warpAffine(flip_image,warped, translation_matrix,
+              Size(width,height));
+    cout<< "-------warp------"<<endl;
+    cout<< originalX << " " << -(originalY)<<endl;
+
+    SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+    SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+  }
+  else
+  {
+    //Default
+    initialRot[0][0]=1.0f;
+    initialRot[0][1]=0.0f;
+    initialRot[0][2]=0.0f;
+    initialRot[0][3]=0.0f;
+
+    initialRot[1][0]=0.0f;
+    // initialRot[1][1]=1.0f;//original -1
+    initialRot[1][1]=-1.0f;//original -1
+    initialRot[1][2]=0.0f;
+    initialRot[1][3]=0.0f;
+
+    initialRot[2][0]=0.0f;
+    initialRot[2][1]=0.0f;
+    initialRot[2][2]=1.0f;
+    initialRot[2][3]=0.0f;
+
+    initialRot[3][0]=0.0f;
+    initialRot[3][1]=0.0f;
+    initialRot[3][2]=0.0f;
+    initialRot[3][3]=1.0f;
+
+    T = glm::mat4(1);
+    R = initialRot;
+    S = glm::mat4(1);
+    reshape(width,height,P,INITIAL_NEAR);
+    ORIGINALSCALEx=INITIAL_SCALE*P[0][0];
+    ORIGINALSCALEy=INITIAL_SCALE*P[1][1];
+
+    SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+    SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+    S = glm::scale(S, glm::vec3(SCALEFACTORx,SCALEFACTORy,(SCALEFACTORx+SCALEFACTORy)/2 ));//Scale
+
+
+    boxfocal(original,
+            rect,
+            myFrameBuffer.FBO,
+            simpleShader,
+            ourModel,
+            M,
+            V,
+            P,
+            T,
+            R,
+            S,
+            width,
+            height,
+            frameImage
+          );
+
+    originalX=rect.centerx-original.centerx;
+    originalY=rect.centery-original.centery;
+    translation_matrix = (Mat_<float>(2,3) << 1, 0, originalX,
+                                              0, 1, originalY);
+
+    warpAffine(flip_image,warped, translation_matrix,
+              Size(width,height));
+    cout<< "-------warp------"<<endl;
+    cout<< originalX << " " << -(originalY)<<endl;
+    ORIGINALSCALEx=S[0][0]*P[0][0];
+    ORIGINALSCALEy=S[1][1]*P[1][1];
+    SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
+    SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+  }
 
   // rectangle(flip_image,Point(rect.xmin,rect.ymin),Point(rect.x,rect.y),255 );
 
-  ORIGINALSCALEx=S[0][0]*P[0][0];
-  ORIGINALSCALEy=S[1][1]*P[1][1];
-  SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
-  SCALEFACTORy=(ORIGINALSCALEy/(P[1][1]))*SCALEFACTOR;
+
   glm::mat4 MVP=(T*R*S)*V*P;
+  cout<< "-------V------"<<endl;
+
+  for(int i=0;i<4;i++)
+  {
+    for(int j=0;j<4;j++)
+    {
+      cout<< V[i][j] <<" ";
+    }
+    cout<<endl;
+  }
   cout<< "-------pvm------"<<endl;
 
   for(int i=0;i<4;i++)
@@ -482,6 +501,9 @@ int main(int argc,char** argv)
   Mat src=Mat(height, width, CV_8UC3);
 
   Mat clon=Mat::zeros(height, width, CV_8UC3);
+
+
+
   while (!glfwWindowShouldClose(window))
   {
     // TheVideoCapturer.grab();
@@ -764,7 +786,13 @@ int main(int argc,char** argv)
     if(reset)
     {
       reset=0;
-      nearFACTOR=INITIAL_NEAR;
+      if(specialreset==1){
+        nearFACTOR=filenear;
+      }
+      else
+      {
+        nearFACTOR=INITIAL_NEAR;
+      }
       reshape(width,height,P,nearFACTOR);
       SCALEFACTOR=1.0f;
       SCALEFACTORx=(ORIGINALSCALEx/(P[0][0]))*SCALEFACTOR;
@@ -881,10 +909,24 @@ int main(int argc,char** argv)
               Size(width,height));
 
     add(warped,clon,warped);
+    // render(
+    //         myFrameBuffer,
+    //         simpleShader,
+    //         textureShader,
+    //         screenShader,
+    //         ourModel,
+    //         M,
+    //         V,
+    //         P,
+    //         width,
+    //         height,
+    //         warped,
+    //         squad
+    //       );
     render(
             myFrameBuffer,
-            simpleShader,
             textureShader,
+            simpleShader,
             screenShader,
             ourModel,
             M,

@@ -48,16 +48,17 @@ int main( int argc, char** argv )
   cout << "centerx_act="<< centerx << " centery_act=" << centery << endl;
   cout << "centerx_real="<< m/2 << " centery_real=" << n/2 << endl;
   if((centerx==m/2)&&(centery==n/2)){
-    return 0;  
+    return 0;
   }
   centerx=(m/2)-centerx;
   centery=(n/2)-centery;
 
   Mat warpGround;
+  cout << "tx="<< centerx << " ty=" << centery << endl;
   warpGround = (Mat_<float>(2,3) << 1, 0, centerx,
                                     0, 1, centery);
   warpAffine(image, image, warpGround,
-            Size(m,n), INTER_LINEAR);  
+            Size(m,n), INTER_LINEAR);
   //warpAffine(image, image, warpGround,
   //          Size(m,n), INTER_LINEAR);
 // warpAffine(image, image, warpGround);
